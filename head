@@ -1,0 +1,15 @@
+Interactive Elixir (1.7.1) - press Ctrl+C to exit (type h() ENTER for help)
+iex(1)> 1
+iex(2)> ** (CompileError) iex:2: undefined function iex/0
+    (stdlib) lists.erl:1354: :lists.mapfoldl/3
+iex(2)> [2, 3]
+iex(3)> ** (CompileError) iex:3: undefined function iex/0
+    (stdlib) lists.erl:1354: :lists.mapfoldl/3
+iex(3)> [1, 2, 3]
+iex(4)> ** (CompileError) iex:4: undefined function iex/0
+    (stdlib) lists.erl:1354: :lists.mapfoldl/3
+iex(4)> 3
+iex(5)> nil
+iex(6)> ** (SyntaxError) iex:6: syntax error before: '..'
+
+iex(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> ...(6)> Terminate batch job (Y/N)? 
