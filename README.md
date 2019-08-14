@@ -1,5 +1,7 @@
 # MakeupErlang
 
+[![Build Status](https://travis-ci.org/tmbb/makeup_erlang.svg?branch=master)](https://travis-ci.org/tmbb/makeup_erlang)
+
 Lexer for the Erlang language for Makeup.
 
 ## Installation
