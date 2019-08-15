@@ -10,22 +10,24 @@ defmodule ErlangLexerTokenizer do
   test "comment" do
     assert lex("%abc") == [{:comment_single, %{}, "%abc"}]
     assert lex("% abc") == [{:comment_single, %{}, "% abc"}]
+
     assert lex("% abc\n") == [
-      {:comment_single, %{}, "% abc"},
-      {:whitespace, %{}, "\n"}
-    ]
+             {:comment_single, %{}, "% abc"},
+             {:whitespace, %{}, "\n"}
+           ]
+
     assert lex("% abc\n123") == [
-      {:comment_single, %{}, "% abc"},
-      {:whitespace, %{}, "\n"},
-      {:number_integer, %{}, "123"}
-    ]
+             {:comment_single, %{}, "% abc"},
+             {:whitespace, %{}, "\n"},
+             {:number_integer, %{}, "123"}
+           ]
   end
 
   test "namespace" do
     assert lex("mod:") == [
-      {:name_namespace, %{}, "mod"},
-      {:punctuation, %{}, ":"}
-    ]
+             {:name_namespace, %{}, "mod"},
+             {:punctuation, %{}, ":"}
+           ]
   end
 
   test "variable" do
@@ -37,26 +39,27 @@ defmodule ErlangLexerTokenizer do
 
   test "function call" do
     assert lex("f(") == [
-      {:name_function, %{}, "f"},
-      {:punctuation, %{group_id: "group-1"}, "("}
-    ]
+             {:name_function, %{}, "f"},
+             {:punctuation, %{group_id: "group-1"}, "("}
+           ]
+
     assert lex("f(1)") == [
-      {:name_function, %{}, "f"},
-      {:punctuation, %{group_id: "group-1"}, "("},
-      {:number_integer, %{}, "1"},
-      {:punctuation, %{group_id: "group-1"}, ")"}
-    ]
+             {:name_function, %{}, "f"},
+             {:punctuation, %{group_id: "group-1"}, "("},
+             {:number_integer, %{}, "1"},
+             {:punctuation, %{group_id: "group-1"}, ")"}
+           ]
   end
 
   test "qualified function call" do
     assert lex("mod:f(1)") == [
-      {:name_namespace, %{}, "mod"},
-      {:punctuation, %{}, ":"},
-      {:name_function, %{}, "f"},
-      {:punctuation, %{group_id: "group-1"}, "("},
-      {:number_integer, %{}, "1"},
-      {:punctuation, %{group_id: "group-1"}, ")"}
-    ]
+             {:name_namespace, %{}, "mod"},
+             {:punctuation, %{}, ":"},
+             {:name_function, %{}, "f"},
+             {:punctuation, %{group_id: "group-1"}, "("},
+             {:number_integer, %{}, "1"},
+             {:punctuation, %{group_id: "group-1"}, ")"}
+           ]
   end
 
   describe "numbers" do
