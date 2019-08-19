@@ -1,6 +1,5 @@
 defmodule ErlangLexerTokenizer do
   use ExUnit.Case, async: false
-  import AssertValue
   import Makeup.Lexers.ErlangLexer.Testing, only: [lex: 1]
 
   test "empty string" do
