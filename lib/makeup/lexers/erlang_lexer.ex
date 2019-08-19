@@ -161,7 +161,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   erlang_string = string_like("\"", "\"", [escape_token, string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
-  punctuation = word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => :=], :punctuation)
+  punctuation = word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >>], :punctuation)
 
   tuple = many_surrounded_by(parsec(:root_element), "{", "}")
 
@@ -192,9 +192,6 @@ defmodule Makeup.Lexers.ErlangLexer do
     token("\n-", :punctuation)
     |> choice([define, record, normal_directive])
 
-  # Should we merge these into the operators or punctuation?
-  binary_markers = choice([string("<<"), string(">>")])
-
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
   @doc false
@@ -209,7 +206,6 @@ defmodule Makeup.Lexers.ErlangLexer do
       whitespace,
       comment,
       punctuation,
-      binary_markers,
       # `tuple` might be unnecessary
       tuple,
       operators,

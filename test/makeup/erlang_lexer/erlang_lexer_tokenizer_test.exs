@@ -83,4 +83,29 @@ defmodule ErlangLexerTokenizer do
       assert lex("1.05e-12") == [{:number_float, %{}, "1.05e-12"}]
     end
   end
+
+  describe "binary" do
+    test "<<>> syntax" do
+      assert lex(~s/<<>>/) == [{:punctuation, %{}, "<<"}, {:punctuation, %{}, ">>"}]
+    end
+
+    test "<<\"\">> syntax" do
+      assert lex(~s/<<"">>/) == [
+               {:punctuation, %{}, "<<"},
+               {:punctuation, %{}, "\""},
+               {:punctuation, %{}, "\""},
+               {:punctuation, %{}, ">>"}
+             ]
+    end
+
+    test "<<\"string\">> syntax" do
+      assert lex(~s/<<"string">>/) == [
+               {:punctuation, %{}, "<<"},
+               {:punctuation, %{}, "\""},
+               {:name_symbol, %{}, "string"},
+               {:punctuation, %{}, "\""},
+               {:punctuation, %{}, ">>"}
+             ]
+    end
+  end
 end
