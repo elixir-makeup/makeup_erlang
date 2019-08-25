@@ -48,7 +48,7 @@ defmodule MakeupErlang.Mixfile do
     [
       {:makeup, "~> 1.0"},
       {:assert_value, "~> 0.9", only: [:dev, :test]},
-      {:ex_doc, "~> 0.19.3", only: [:dev, :test]}
+      {:ex_doc, "~> 0.21.1", only: [:dev, :test]}
     ]
   end
 end
