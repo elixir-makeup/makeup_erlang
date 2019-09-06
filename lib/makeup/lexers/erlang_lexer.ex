@@ -161,17 +161,13 @@ defmodule Makeup.Lexers.ErlangLexer do
   erlang_string = string_like("\"", "\"", [escape_token, string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
-  punctuation = word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >>], :punctuation)
+  punctuation =
+    word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >> || -> \#], :punctuation)
 
   tuple = many_surrounded_by(parsec(:root_element), "{", "}")
 
-  operators =
-    word_from_list(
-      ~W[
-      + +? -- * / < > /= =:= =/= <= >= ==? <- ! ?
-    ],
-      :operator
-    )
+  syntax_operators =
+    word_from_list(~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- ! ? ?!], :operator)
 
   define =
     token("define", :name_entity)
@@ -208,7 +204,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       punctuation,
       # `tuple` might be unnecessary
       tuple,
-      operators,
+      syntax_operators,
       # Numbers
       number_integer_in_weird_base,
       number_float,

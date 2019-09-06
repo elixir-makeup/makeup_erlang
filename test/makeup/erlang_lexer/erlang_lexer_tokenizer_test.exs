@@ -156,6 +156,26 @@ defmodule ErlangLexerTokenizer do
   end
 
   describe "operators" do
+    test "syntax operators are tokenized as operator" do
+      assert lex("+") == [{:operator, %{}, "+"}]
+      assert lex("-") == [{:operator, %{}, "-"}]
+      assert lex("*") == [{:operator, %{}, "*"}]
+      assert lex("/") == [{:operator, %{}, "/"}]
+      assert lex("==") == [{:operator, %{}, "=="}]
+      assert lex("/=") == [{:operator, %{}, "/="}]
+      assert lex("=:=") == [{:operator, %{}, "=:="}]
+      assert lex("=/=") == [{:operator, %{}, "=/="}]
+      assert lex("<") == [{:operator, %{}, "<"}]
+      assert lex("=<") == [{:operator, %{}, "=<"}]
+      assert lex(">") == [{:operator, %{}, ">"}]
+      assert lex(">=") == [{:operator, %{}, ">="}]
+      assert lex("++") == [{:operator, %{}, "++"}]
+      assert lex("--") == [{:operator, %{}, "--"}]
+      assert lex("=") == [{:operator, %{}, "="}]
+      assert lex("!") == [{:operator, %{}, "!"}]
+      assert lex("<-") == [{:operator, %{}, "<-"}]
+    end
+
     test "word operators are tokenized as operator" do
       assert lex("div") == [{:operator_word, %{}, "div"}]
       assert lex("rem") == [{:operator_word, %{}, "rem"}]
