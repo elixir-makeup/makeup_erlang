@@ -101,10 +101,112 @@ defmodule ErlangLexerTokenizer do
       assert lex(~s/<<"string">>/) == [
                {:punctuation, %{}, "<<"},
                {:punctuation, %{}, "\""},
-               {:name_symbol, %{}, "string"},
+               {:string_symbol, %{}, "string"},
                {:punctuation, %{}, "\""},
                {:punctuation, %{}, ">>"}
              ]
+    end
+  end
+
+  describe "atoms" do
+    test "are tokenized as such" do
+      assert lex("atom") == [{:string_symbol, %{}, "atom"}]
+    end
+
+    test "are tokenized as such even when quoted" do
+      assert lex("'atom'") == [{:string_symbol, %{}, "'atom'"}]
+      assert lex("'atom atom'") == [{:string_symbol, %{}, "'atom atom'"}]
+      assert lex("'atom+atom'") == [{:string_symbol, %{}, "'atom+atom'"}]
+      assert lex("'atom@atom'") == [{:string_symbol, %{}, "'atom@atom'"}]
+      assert lex("'atom123atom'") == [{:string_symbol, %{}, "'atom123atom'"}]
+    end
+
+    test "does not tokenize invalid characters as atom (\\n, ', \\)" do
+      assert {:string_symbol, %{}, "atom"} in lex("atom\n")
+      assert {:string_symbol, %{}, "atom"} in lex("atom'")
+      assert {:string_symbol, %{}, "atom"} in lex("atom\\")
+    end
+  end
+
+  describe "keywords" do
+    test "keyword is tokenized as keyword" do
+      assert lex("after") == [{:keyword, %{}, "after"}]
+      assert lex("begin") == [{:keyword, %{}, "begin"}]
+      assert lex("case") == [{:keyword, %{}, "case"}]
+      assert lex("catch") == [{:keyword, %{}, "catch"}]
+      assert lex("cond") == [{:keyword, %{}, "cond"}]
+      assert lex("end") == [{:keyword, %{}, "end"}]
+      assert lex("fun") == [{:keyword, %{}, "fun"}]
+      assert lex("if") == [{:keyword, %{}, "if"}]
+      assert lex("of") == [{:keyword, %{}, "of"}]
+      assert lex("query") == [{:keyword, %{}, "query"}]
+      assert lex("receive") == [{:keyword, %{}, "receive"}]
+      assert lex("when") == [{:keyword, %{}, "when"}]
+    end
+
+    test "atoms are not tokenized as keyword" do
+      refute lex("literal_atom") == [{:keyword, %{}, "literal_atom"}]
+    end
+
+    test "atoms that include a keyword on it is not tokenized as keyword" do
+      refute {:keyword, %{}, "fun"} in lex("func")
+      refute {:keyword, %{}, "when"} in lex("when_found")
+      refute {:keyword, %{}, "when"} in lex("found_when")
+    end
+  end
+
+  describe "operators" do
+    test "syntax operators are tokenized as operator" do
+      assert lex("+") == [{:operator, %{}, "+"}]
+      assert lex("-") == [{:operator, %{}, "-"}]
+      assert lex("*") == [{:operator, %{}, "*"}]
+      assert lex("/") == [{:operator, %{}, "/"}]
+      assert lex("==") == [{:operator, %{}, "=="}]
+      assert lex("/=") == [{:operator, %{}, "/="}]
+      assert lex("=:=") == [{:operator, %{}, "=:="}]
+      assert lex("=/=") == [{:operator, %{}, "=/="}]
+      assert lex("<") == [{:operator, %{}, "<"}]
+      assert lex("=<") == [{:operator, %{}, "=<"}]
+      assert lex(">") == [{:operator, %{}, ">"}]
+      assert lex(">=") == [{:operator, %{}, ">="}]
+      assert lex("++") == [{:operator, %{}, "++"}]
+      assert lex("--") == [{:operator, %{}, "--"}]
+      assert lex("=") == [{:operator, %{}, "="}]
+      assert lex("!") == [{:operator, %{}, "!"}]
+      assert lex("<-") == [{:operator, %{}, "<-"}]
+    end
+
+    test "word operators are tokenized as operator" do
+      assert lex("div") == [{:operator_word, %{}, "div"}]
+      assert lex("rem") == [{:operator_word, %{}, "rem"}]
+      assert lex("or") == [{:operator_word, %{}, "or"}]
+      assert lex("xor") == [{:operator_word, %{}, "xor"}]
+      assert lex("bor") == [{:operator_word, %{}, "bor"}]
+      assert lex("bxor") == [{:operator_word, %{}, "bxor"}]
+      assert lex("bsl") == [{:operator_word, %{}, "bsl"}]
+      assert lex("bsr") == [{:operator_word, %{}, "bsr"}]
+      assert lex("and") == [{:operator_word, %{}, "and"}]
+      assert lex("band") == [{:operator_word, %{}, "band"}]
+      assert lex("not") == [{:operator_word, %{}, "not"}]
+      assert lex("bnot") == [{:operator_word, %{}, "bnot"}]
+    end
+
+    test "atoms are not tokenized as operator" do
+      refute lex("literal_atom") == [{:operator_word, %{}, "literal_atom"}]
+    end
+
+    test "atoms that includes operators are not tokenized as operator" do
+      refute {:operator_word, %{}, "div"} in lex("divatom")
+      refute {:operator_word, %{}, "div"} in lex("div_atom")
+      refute {:operator_word, %{}, "div"} in lex("atom_div")
+      refute {:operator_word, %{}, "div"} in lex("atomdiv")
+      refute {:operator_word, %{}, "div"} in lex("atomdivatom")
+      refute {:operator_word, %{}, "div"} in lex("'div'")
+      refute {:operator_word, %{}, "+"} in lex("'quoted + atom'")
+    end
+
+    test "string that includes operators are not tokenized as operator" do
+      refute {:word_operator, %{}, "div"} in lex(~s/"div"/)
     end
   end
 end

@@ -95,11 +95,11 @@ defmodule Makeup.Lexers.ErlangLexer do
   simple_atom_name =
     ascii_string([?a..?z], 1)
     |> optional(ascii_string([?a..?z, ?_, ?0..?9, ?A..?Z], min: 1))
+    |> reduce({Enum, :join, []})
 
   quoted_atom_name =
     string("'")
-    |> optional(utf8_string([not: ?\n, not: ?'], min: 1))
-    |> utf8_string([not: ?\\], min: 1)
+    |> optional(utf8_string([not: ?\n, not: ?', not: ?\\], min: 1))
     |> string("'")
 
   atom_name =
@@ -108,7 +108,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       quoted_atom_name
     ])
 
-  atom = token(atom_name, :name_symbol)
+  atom = token(atom_name, :string_symbol)
 
   namespace =
     token(atom_name, :name_namespace)
@@ -161,17 +161,13 @@ defmodule Makeup.Lexers.ErlangLexer do
   erlang_string = string_like("\"", "\"", [escape_token, string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
-  punctuation = word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >>], :punctuation)
+  punctuation =
+    word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >> || -> \#], :punctuation)
 
   tuple = many_surrounded_by(parsec(:root_element), "{", "}")
 
-  operators =
-    word_from_list(
-      ~W[
-      + +? -- * / < > /= =:= =/= <= >= ==? <- ! ?
-    ],
-      :operator
-    )
+  syntax_operators =
+    word_from_list(~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- ! ? ?!], :operator)
 
   define =
     token("define", :name_entity)
@@ -208,7 +204,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       punctuation,
       # `tuple` might be unnecessary
       tuple,
-      operators,
+      syntax_operators,
       # Numbers
       number_integer_in_weird_base,
       number_float,
@@ -282,13 +278,13 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   @word_operators ~W[and andalso band bnot bor bsl bsr bxor div not or orelse rem xor]
 
-  defp postprocess_helper([{:name, meta, value} | tokens]) when value in @keywords,
+  defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @keywords,
     do: [{:keyword, meta, value} | postprocess_helper(tokens)]
 
-  defp postprocess_helper([{:name, meta, value} | tokens]) when value in @builtins,
+  defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @builtins,
     do: [{:name_builtin, meta, value} | postprocess_helper(tokens)]
 
-  defp postprocess_helper([{:name, meta, value} | tokens]) when value in @word_operators,
+  defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @word_operators,
     do: [{:operator_word, meta, value} | postprocess_helper(tokens)]
 
   defp postprocess_helper([token | tokens]), do: [token | postprocess_helper(tokens)]
