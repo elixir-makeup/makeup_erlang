@@ -50,8 +50,6 @@ defmodule Makeup.Lexers.ErlangLexer do
       escape_ctrl
     ])
 
-  escape_token = token(escape, :string_escape)
-
   numeric_base =
     choice([
       ascii_char([?1..?2]) |> ascii_char([?0..?9]),
@@ -158,7 +156,7 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> ascii_char(to_charlist("~#+BPWXb-ginpswx"))
     |> token(:string_interpol)
 
-  erlang_string = string_like("\"", "\"", [escape_token, string_interpol], :string)
+  erlang_string = string_like("\"", "\"", [string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
   punctuation =
@@ -201,6 +199,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       hashbang,
       whitespace,
       comment,
+      erlang_string,
       punctuation,
       # `tuple` might be unnecessary
       tuple,
@@ -211,7 +210,6 @@ defmodule Makeup.Lexers.ErlangLexer do
       number_integer,
       # Variables
       variable,
-      erlang_string,
       namespace,
       function,
       atom,

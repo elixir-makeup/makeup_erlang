@@ -83,6 +83,30 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "charlists" do
+    test "tokenize charlist as strings" do
+      assert lex(~s/"charlist"/) == [{:string, %{}, ~s/"charlist"/}]
+      assert lex(~s/"long char list"/) == [{:string, %{}, ~s/"long char list"/}]
+      assert lex(~s/"multi \n line charlist"/) == [{:string, %{}, ~s/"multi \n line charlist"/}]
+    end
+
+    test "do not tokenize variables inside charlists" do
+      refute {:name, %{}, "Variable"} in lex(~s/"char False_variable list"/)
+      refute {:name, %{}, "Variable"} in lex(~s/"FalseVariable"/)
+    end
+
+    test "do not tokenize operators inside charlists" do
+      refute {:operator_word, %{}, "div"} in lex(~s/"div"/)
+      refute {:operator_word, %{}, "div"} in lex(~s/"char div list"/)
+    end
+
+    test "tokenizes the interpolation inside a charlist" do
+      assert {:string_interpol, %{}, "~p"} in lex(~s/"~p"/)
+      assert {:string_interpol, %{}, "~p"} in lex(~s/"some text ~p"/)
+      assert {:string_interpol, %{}, "~p"} in lex(~s/"multi line \n text ~p"/)
+    end
+  end
+
   describe "binary" do
     test "<<>> syntax" do
       assert lex(~s/<<>>/) == [{:punctuation, %{}, "<<"}, {:punctuation, %{}, ">>"}]
@@ -91,8 +115,7 @@ defmodule ErlangLexerTokenizer do
     test "<<\"\">> syntax" do
       assert lex(~s/<<"">>/) == [
                {:punctuation, %{}, "<<"},
-               {:punctuation, %{}, "\""},
-               {:punctuation, %{}, "\""},
+               {:string, %{}, ~s/""/},
                {:punctuation, %{}, ">>"}
              ]
     end
@@ -100,9 +123,7 @@ defmodule ErlangLexerTokenizer do
     test "<<\"string\">> syntax" do
       assert lex(~s/<<"string">>/) == [
                {:punctuation, %{}, "<<"},
-               {:punctuation, %{}, "\""},
-               {:string_symbol, %{}, "string"},
-               {:punctuation, %{}, "\""},
+               {:string, %{}, ~s/"string"/},
                {:punctuation, %{}, ">>"}
              ]
     end
