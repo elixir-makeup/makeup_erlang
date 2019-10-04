@@ -32,7 +32,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   escape_octal = ascii_string([?0..?7], min: 1, max: 3)
 
-  escape_char = ascii_char([?b, ?d, ?e, ?f, ?n, ?r, ?s, ?t, ?v, ?', ?", ?\\])
+  escape_char = ascii_char([?\b, ?\d, ?\e, ?\f, ?\n, ?\r, ?\s, ?\t, ?\v, ?\', ?\", ?\\])
 
   escape_hex =
     choice([
