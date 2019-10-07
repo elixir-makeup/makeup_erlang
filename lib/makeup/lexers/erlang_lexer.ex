@@ -167,24 +167,17 @@ defmodule Makeup.Lexers.ErlangLexer do
   syntax_operators =
     word_from_list(~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- ! ? ?!], :operator)
 
-  define =
-    token("define", :name_entity)
+  # We need to match on the new line here as to not tokenize a function call as a module attribute.
+  # Without the newline matching, the expression `a(X) - b(Y)` would tokenize
+  # `b(Y)` as a module attribute definition instead of a function call.
+  module_attribute =
+    token("\n", :whitespace)
+    |> optional(whitespace)
+    |> concat(token("-", :punctuation))
+    |> optional(whitespace)
+    |> concat(atom_name |> token(:name_attribute))
     |> optional(whitespace)
     |> concat(token("(", :punctuation))
-    |> concat(token(macro_name, :name_constant))
-
-  record =
-    token("record", :name_entity)
-    |> optional(whitespace)
-    |> concat(token("(", :punctuation))
-    |> concat(token(macro_name, :name_label))
-
-  normal_directive = token(atom_name, :name_entity)
-
-  # We need to add a newline to the file for this to work
-  directive =
-    token("\n-", :punctuation)
-    |> choice([define, record, normal_directive])
 
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
@@ -195,7 +188,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   root_element_combinator =
     choice([
-      directive,
+      module_attribute,
       hashbang,
       whitespace,
       comment,
