@@ -230,4 +230,66 @@ defmodule ErlangLexerTokenizer do
       refute {:word_operator, %{}, "div"} in lex(~s/"div"/)
     end
   end
+
+  describe "module attributes" do
+    test "tokenizes definition of module attributtes" do
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "module"} | _] =
+               lex("-module(module_name).")
+
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "export"} | _] =
+               lex("-export([func/0]).")
+
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "record"} | _] =
+               lex(~s/-record(module_name, {name = "", id})./)
+    end
+
+    test "tokenizes the value of a module attribute" do
+      tokens = lex(~s/-record(module_name, {name = "", id})./)
+      assert {:name_attribute, %{}, "record"} in tokens
+      assert {:string_symbol, %{}, "module_name"} in tokens
+      assert {:string_symbol, %{}, "id"} in tokens
+    end
+
+    test "tokenizes module attributes when incomplete" do
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "module"} | _] =
+               lex("-module(module_")
+
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "export"} | _] =
+               lex("-export([func/")
+
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "record"} | _] =
+               lex(~s"-record(module_name, {name =")
+    end
+
+    test "tokenizes module attributes with whitespace" do
+      assert [
+               {:punctuation, %{}, "-"},
+               {:whitespace, %{}, " "},
+               {:name_attribute, %{}, "module"} | _
+             ] = lex("- module(module_name).")
+
+      assert [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "module"} | _] =
+               lex("-module (module_name).")
+
+      assert [
+               {:punctuation, %{}, "-"},
+               {:whitespace, %{}, " "},
+               {:name_attribute, %{}, "module"},
+               {:whitespace, %{}, " "} | _
+             ] = lex("- module (module_name).")
+    end
+
+    test "matches module attributes that start with a newline" do
+      assert [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "module"} | _
+             ] = lex("\n-module(module_name).")
+    end
+
+    test "does not tokenize function calls as module attributes" do
+      assert {:name_function, %{}, "b"} in lex("a(X) - b(Y)")
+      assert {:name_attribute, %{}, "b"} not in lex("a(X) - b(Y)")
+    end
+  end
 end
