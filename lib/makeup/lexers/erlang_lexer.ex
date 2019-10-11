@@ -95,10 +95,20 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> optional(ascii_string([?a..?z, ?_, ?0..?9, ?A..?Z], min: 1))
     |> reduce({Enum, :join, []})
 
+  single_quote_escape = string("\\'")
+
+  quoted_atom_name_middle =
+    lookahead_not(string("'"))
+    |> choice([
+      single_quote_escape,
+      utf8_string([not: ?\n, not: ?', not: ?\\], min: 1),
+      escape
+    ])
+
   quoted_atom_name =
     string("'")
-    |> optional(utf8_string([not: ?\n, not: ?', not: ?\\], min: 1))
-    |> string("'")
+    |> repeat(quoted_atom_name_middle)
+    |> concat(string("'"))
 
   atom_name =
     choice([
@@ -156,7 +166,8 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> ascii_char(to_charlist("~#+BPWXb-ginpswx"))
     |> token(:string_interpol)
 
-  erlang_string = string_like("\"", "\"", [string_interpol], :string)
+  escape_double_quote = string(~s/\\"/)
+  erlang_string = string_like(~s/"/, ~s/"/, [escape_double_quote, string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
   punctuation =
