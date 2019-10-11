@@ -156,7 +156,8 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> ascii_char(to_charlist("~#+BPWXb-ginpswx"))
     |> token(:string_interpol)
 
-  erlang_string = string_like("\"", "\"", [string_interpol], :string)
+  escape_double_quote = string(~s/\\"/)
+  erlang_string = string_like(~s/"/, ~s/"/, [escape_double_quote, string_interpol], :string)
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
   punctuation =

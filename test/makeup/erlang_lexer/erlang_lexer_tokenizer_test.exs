@@ -105,6 +105,17 @@ defmodule ErlangLexerTokenizer do
       assert {:string_interpol, %{}, "~p"} in lex(~s/"some text ~p"/)
       assert {:string_interpol, %{}, "~p"} in lex(~s/"multi line \n text ~p"/)
     end
+
+    test "tokenizes escape of double quotes correctly" do
+      assert [{:string, %{}, ~s/"escape \\"double quote\\""/}] == lex(~s/"escape \\"double quote\\""/)
+      assert [{:string, %{}, ~s/"\\"quote\\""/}] == lex(~s/"\\"quote\\""/)
+      assert {:string, %{}, ~s/"invalid string\\"/} not in lex(~s/"invalid string\\"/)
+    end
+    
+    test "tokenizes literal escaped characters correctly" do
+      assert [{:string, %{}, ~s/"\\b"/}] == lex(~s/"\\b"/)
+      assert [{:string, %{}, ~s/"\\\\b"/}] == lex(~s/"\\\\b"/)
+    end
   end
 
   describe "binary" do
