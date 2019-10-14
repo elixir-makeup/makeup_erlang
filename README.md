@@ -2,22 +2,19 @@
 
 [![Build Status](https://travis-ci.org/tmbb/makeup_erlang.svg?branch=master)](https://travis-ci.org/tmbb/makeup_erlang)
 
-Lexer for the Erlang language for Makeup.
+A [Makeup](https://github.com/tmbb/makeup/) lexer for the `Erlang` language.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `makeup_erlang` to your list of dependencies in `mix.exs`:
+Add `makeup_erlang` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:makeup_erlang, "~> 0.5"}
+    {:makeup_erlang, "~> 0.1.0"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/makeup_erlang](https://hexdocs.pm/makeup_lexer).
-
+The lexer will automatically register itself with `Makeup` for the languages `erlang` and `erl` 
+as well as the extensions `.erl`, `.hrl` and `.escript`.
