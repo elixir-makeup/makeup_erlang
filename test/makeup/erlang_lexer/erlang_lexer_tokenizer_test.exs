@@ -308,5 +308,10 @@ defmodule ErlangLexerTokenizer do
       assert {:name_function, %{}, "b"} in lex("a(X) - b(Y)")
       assert {:name_attribute, %{}, "b"} not in lex("a(X) - b(Y)")
     end
+
+    test "handles -spec attributes" do
+      [{:punctuation, %{}, "-"}, {:name_attribute, %{}, "spec"} | _] =
+        lex("-spec function_name(type(), type()) -> type().")
+    end
   end
 end
