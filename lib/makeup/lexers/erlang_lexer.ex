@@ -119,7 +119,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   atom = token(atom_name, :string_symbol)
 
   namespace =
-    token(atom_name, :name_namespace)
+    token(atom_name, :name_class)
     |> concat(token(":", :punctuation))
 
   function =
