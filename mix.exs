@@ -1,15 +1,20 @@
 defmodule MakeupErlang.Mixfile do
   use Mix.Project
 
+  @version "0.1.0"
+  @repo_url "https://github.com/tmbb/makeup_erlang"
+
   def project do
     [
       app: :makeup_erlang,
-      version: "0.5.0",
+      version: @version,
       elixir: "~> 1.4",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      # Package
       package: package(),
+      name: "Makeup Erlang",
+      source: @repo_url,
+      homepage_url: @repo_url,
       description: description(),
       docs: [
         main: "readme",
@@ -31,7 +36,7 @@ defmodule MakeupErlang.Mixfile do
       name: :makeup_erlang,
       licenses: ["BSD"],
       maintainers: ["Tiago Barroso <tmbb@campus.ul.pt>"],
-      links: %{"GitHub" => "https://github.com/tmbb/makeup_erlang"}
+      links: %{"GitHub" => @repo_url}
     ]
   end
 
