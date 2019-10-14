@@ -188,7 +188,7 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> optional(whitespace)
     |> concat(atom_name |> token(:name_attribute))
     |> optional(whitespace)
-    |> concat(token("(", :punctuation))
+    |> optional(token("(", :punctuation))
 
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
