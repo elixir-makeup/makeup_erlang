@@ -24,7 +24,7 @@ defmodule ErlangLexerTokenizer do
 
   test "namespace" do
     assert lex("mod:") == [
-             {:name_namespace, %{}, "mod"},
+             {:name_class, %{}, "mod"},
              {:punctuation, %{}, ":"}
            ]
   end
@@ -52,7 +52,7 @@ defmodule ErlangLexerTokenizer do
 
   test "qualified function call" do
     assert lex("mod:f(1)") == [
-             {:name_namespace, %{}, "mod"},
+             {:name_class, %{}, "mod"},
              {:punctuation, %{}, ":"},
              {:name_function, %{}, "f"},
              {:punctuation, %{group_id: "group-1"}, "("},
