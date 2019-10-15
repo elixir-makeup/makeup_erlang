@@ -178,6 +178,14 @@ defmodule Makeup.Lexers.ErlangLexer do
   syntax_operators =
     word_from_list(~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- ! ? ?!], :operator)
 
+  record =
+    token(string("#"), :operator)
+    |> concat(atom)
+    |> choice([
+      token("{", :punctuation),
+      token(".", :punctuation)
+    ])
+
   # We need to match on the new line here as to not tokenize a function call as a module attribute.
   # Without the newline matching, the expression `a(X) - b(Y)` would tokenize
   # `b(Y)` as a module attribute definition instead of a function call.
@@ -204,6 +212,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       whitespace,
       comment,
       erlang_string,
+      record,
       punctuation,
       # `tuple` might be unnecessary
       tuple,
