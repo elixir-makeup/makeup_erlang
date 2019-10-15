@@ -314,4 +314,50 @@ defmodule ErlangLexerTokenizer do
         lex("-spec function_name(type(), type()) -> type().")
     end
   end
+
+  describe "record" do
+    test "tokenizes full record definitions correctly" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "record"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#record{attribute = Value}.")
+
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "record"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#record{attribute = Value, other_attribute = OtherValue}.")
+
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "record"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#record{}.")
+    end
+
+    test "tokenizes record attribute access correctly" do
+      assert [
+               {_, %{}, "RecordVariable"},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "record_name"},
+               {:punctuation, %{}, "."} | _
+             ] = lex("RecordVariable#record_name.attribute")
+    end
+
+    test "tokenizes the update of a record correctly" do
+      assert [
+               {_, %{}, "RecordVariable"},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "record_name"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("RecordVariable#record_name{attribute = Value")
+    end
+
+    test "does not tokenize invalid records" do
+      tokens = lex("#record(attribute = Value)")
+      assert {:operator, %{}, "#"} not in tokens
+      assert {:string_symbol, %{}, "record"} not in tokens
+    end
+  end
 end
