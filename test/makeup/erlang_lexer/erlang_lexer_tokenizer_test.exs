@@ -360,4 +360,21 @@ defmodule ErlangLexerTokenizer do
       assert {:string_symbol, %{}, "record"} not in tokens
     end
   end
+
+  describe "function_arity" do
+    test "is tokenized correctly for the syntax function_name/arity" do
+      assert [
+               {:string_symbol, %{}, "function_name"},
+               {:punctuation, %{}, "/"},
+               {:number_integer, %{}, "0"}
+             ] == lex("function_name/0")
+    end
+
+    test "is tokenized correctly when referenced with `fun function_name/arity`" do
+      tokens = lex("function_name/0")
+      assert {:string_symbol, %{}, "function_name"} in tokens
+      assert {:punctuation, %{}, "/"} in tokens
+      assert {:number_integer, %{}, "0"} in tokens
+    end
+  end
 end

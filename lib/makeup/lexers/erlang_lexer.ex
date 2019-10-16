@@ -198,6 +198,11 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> optional(whitespace)
     |> optional(token("(", :punctuation))
 
+  function_arity =
+    atom
+    |> concat(token("/", :punctuation))
+    |> concat(number_integer)
+
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
   @doc false
@@ -224,6 +229,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       # Variables
       variable,
       namespace,
+      function_arity,
       function,
       atom,
       macro,
