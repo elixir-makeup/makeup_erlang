@@ -171,7 +171,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   # Combinators that highlight expressions surrounded by a pair of delimiters.
   punctuation =
-    word_from_list(~w[\[ \] : _ @ \" . \#{ { } ( ) | ; , => := << >> || -> \#], :punctuation)
+    word_from_list([","] ++ ~w[\[ \] : _ @ \" . \#{ { } ( ) | ; => := << >> || -> \#], :punctuation)
 
   tuple = many_surrounded_by(parsec(:root_element), "{", "}")
 
