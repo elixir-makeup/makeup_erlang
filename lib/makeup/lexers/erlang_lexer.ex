@@ -1,8 +1,8 @@
 defmodule Makeup.Lexers.ErlangLexer do
   @moduledoc """
-  Lexer for the Erlang language to be used
-  with the Makeup package.
+  A `Makeup` lexer for the `Erlang` language.
   """
+
   @behaviour Makeup.Lexer
 
   import NimbleParsec
