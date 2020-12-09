@@ -1,8 +1,8 @@
 defmodule MakeupErlang.Mixfile do
   use Mix.Project
 
-  @version "0.1.0"
-  @repo_url "https://github.com/elixir-makeup/makeup_erlang"
+  @version "0.1.1"
+  @url "https://github.com/elixir-makeup/makeup_erlang"
 
   def project do
     [
@@ -13,8 +13,6 @@ defmodule MakeupErlang.Mixfile do
       deps: deps(),
       package: package(),
       name: "Makeup Erlang",
-      source: @repo_url,
-      homepage_url: @repo_url,
       description: description(),
       aliases: [docs: &build_docs/1]
     ]
@@ -31,7 +29,7 @@ defmodule MakeupErlang.Mixfile do
       name: :makeup_erlang,
       licenses: ["BSD"],
       maintainers: ["Tiago Barroso <tmbb@campus.ul.pt>"],
-      links: %{"GitHub" => @repo_url}
+      links: %{"GitHub" => @url}
     ]
   end
 
