@@ -1,8 +1,8 @@
 # MakeupErlang
 
-[![Build Status](https://travis-ci.org/tmbb/makeup_erlang.svg?branch=master)](https://travis-ci.org/tmbb/makeup_erlang)
+[![Build Status](https://github.com/elixir-makeup/makeup_erlang/workflows/CI/badge.svg)](https://github.com/elixir-makeup/makeup_erlang/actions)
 
-A [Makeup](https://github.com/tmbb/makeup/) lexer for the `Erlang` language.
+A [Makeup](https://github.com/elixir-makeup/makeup/) lexer for the `Erlang` language.
 
 ## Installation
 
