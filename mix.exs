@@ -44,8 +44,7 @@ defmodule MakeupErlang.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:makeup, "~> 1.0"},
-      {:assert_value, "~> 0.9", only: [:dev, :test]}
+      {:makeup, "~> 1.0"}
     ]
   end
 
