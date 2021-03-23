@@ -107,11 +107,13 @@ defmodule ErlangLexerTokenizer do
     end
 
     test "tokenizes escape of double quotes correctly" do
-      assert [{:string, %{}, ~s/"escape \\"double quote\\""/}] == lex(~s/"escape \\"double quote\\""/)
+      assert [{:string, %{}, ~s/"escape \\"double quote\\""/}] ==
+               lex(~s/"escape \\"double quote\\""/)
+
       assert [{:string, %{}, ~s/"\\"quote\\""/}] == lex(~s/"\\"quote\\""/)
       assert {:string, %{}, ~s/"invalid string\\"/} not in lex(~s/"invalid string\\"/)
     end
-    
+
     test "tokenizes literal escaped characters correctly" do
       assert [{:string, %{}, ~s/"\\b"/}] == lex(~s/"\\b"/)
       assert [{:string, %{}, ~s/"\\\\b"/}] == lex(~s/"\\\\b"/)
@@ -152,11 +154,16 @@ defmodule ErlangLexerTokenizer do
       assert lex("'atom@atom'") == [{:string_symbol, %{}, "'atom@atom'"}]
       assert lex("'atom123atom'") == [{:string_symbol, %{}, "'atom123atom'"}]
     end
-    
+
     test "are tokenized when quoted and have escaped characters" do
-      assert [{:string_symbol, %{}, ~s/'\\'escaped\\' quoted atom'/}] == lex(~s/'\\'escaped\\' quoted atom'/)
+      assert [{:string_symbol, %{}, ~s/'\\'escaped\\' quoted atom'/}] ==
+               lex(~s/'\\'escaped\\' quoted atom'/)
+
       assert [{:string_symbol, %{}, ~s/'escaped \\b quote'/}] == lex(~s/'escaped \\b quote'/)
-      assert {:string_symbol, %{}, ~s/'\\'escaped\\' quoted atom/} not in lex(~s/'\\'invalid\\' quoted atom case/)
+
+      assert {:string_symbol, %{}, ~s/'\\'escaped\\' quoted atom/} not in lex(
+               ~s/'\\'invalid\\' quoted atom case/
+             )
     end
 
     test "does not tokenize invalid characters as atom (\\n, ', \\)" do
