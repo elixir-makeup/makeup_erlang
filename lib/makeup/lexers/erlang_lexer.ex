@@ -250,7 +250,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   # meant to be used by end-users
   ##############################################################################
 
-  @inline Application.get_env(:makeup_erlang, :inline, false)
+  @inline Application.compile_env(:makeup_erlang, :inline, false)
 
   @impl Makeup.Lexer
   defparsec(
