@@ -250,20 +250,16 @@ defmodule Makeup.Lexers.ErlangLexer do
   # meant to be used by end-users
   ##############################################################################
 
-  @inline Application.get_env(:makeup_erlang, :inline, false)
-
   @impl Makeup.Lexer
   defparsec(
     :root_element,
-    root_element_combinator |> map({__MODULE__, :__as_erlang_language__, []}),
-    inline: @inline
+    root_element_combinator |> map({__MODULE__, :__as_erlang_language__, []})
   )
 
   @impl Makeup.Lexer
   defparsec(
     :root,
-    repeat(parsec(:root_element)),
-    inline: @inline
+    repeat(parsec(:root_element))
   )
 
   ###################################################################
