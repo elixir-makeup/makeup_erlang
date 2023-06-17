@@ -27,7 +27,7 @@ defmodule MakeupErlang.Mixfile do
   defp package do
     [
       name: :makeup_erlang,
-      licenses: ["BSD"],
+      licenses: ["BSD-2-Clause"],
       maintainers: ["Tiago Barroso <tmbb@campus.ul.pt>"],
       links: %{"GitHub" => @url}
     ]
