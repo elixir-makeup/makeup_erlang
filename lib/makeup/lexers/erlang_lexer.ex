@@ -92,7 +92,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   simple_atom_name =
     ascii_string([?a..?z], 1)
-    |> optional(ascii_string([?a..?z, ?_, ?0..?9, ?A..?Z], min: 1))
+    |> optional(ascii_string([?a..?z, ?_, ?@, ?0..?9, ?A..?Z], min: 1))
     |> reduce({Enum, :join, []})
 
   single_quote_escape = string("\\'")
@@ -206,6 +206,14 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> concat(token("/", :punctuation))
     |> concat(number_integer)
 
+  # Erlang prompt 
+  erl_prompt =
+    string("\n")
+    |> optional(string("(") |> concat(atom_name) |> string(")"))
+    |> optional(digits)
+    |> string("> ")
+    |> token(:generic_prompt, %{selectable: false})
+
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
   @doc false
@@ -215,6 +223,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   root_element_combinator =
     choice([
+      erl_prompt,
       module_attribute,
       hashbang,
       whitespace,
