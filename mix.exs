@@ -1,7 +1,7 @@
 defmodule MakeupErlang.Mixfile do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @url "https://github.com/elixir-makeup/makeup_erlang"
 
   def project do
