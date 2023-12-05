@@ -389,32 +389,47 @@ defmodule ErlangLexerTokenizer do
 
   describe "prompt" do
     test "without number" do
-      assert lex("> a.") == [{:generic_prompt, %{selectable: false}, "> "},
-                             {:string_symbol, %{}, "a"},
-                             {:punctuation, %{}, "."}]
-      assert lex("(a@b)> a.") == [{:generic_prompt, %{selectable: false}, "(a@b)> "},
-                                  {:string_symbol, %{}, "a"},
-                                  {:punctuation, %{}, "."}]
+      assert lex("> a.") == [
+               {:generic_prompt, %{selectable: false}, "> "},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, "."}
+             ]
+
+      assert lex("(a@b)> a.") == [
+               {:generic_prompt, %{selectable: false}, "(a@b)> "},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, "."}
+             ]
     end
 
     test "with number" do
-      assert lex("1> a.") == [{:generic_prompt, %{selectable: false}, "1> "},
-                              {:string_symbol, %{}, "a"},
-                              {:punctuation, %{}, "."}]
-      assert lex("(a@b)1> a.") == [{:generic_prompt, %{selectable: false}, "(a@b)1> "},
-                                   {:string_symbol, %{}, "a"},
-                                   {:punctuation, %{}, "."}]
+      assert lex("1> a.") == [
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, "."}
+             ]
+
+      assert lex("(a@b)1> a.") == [
+               {:generic_prompt, %{selectable: false}, "(a@b)1> "},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, "."}
+             ]
     end
 
     test "greater-than still works" do
-      assert lex("1>2") == [{:number_integer, %{}, "1"},
-                            {:operator, %{}, ">"},
-                            {:number_integer, %{}, "2"}]
-      assert lex("1 > 2") == [{:number_integer, %{}, "1"},
-                              {:whitespace, %{}, " "},
-                              {:operator, %{}, ">"},
-                              {:whitespace, %{}, " "},
-                              {:number_integer, %{}, "2"}]
+      assert lex("1>2") == [
+               {:number_integer, %{}, "1"},
+               {:operator, %{}, ">"},
+               {:number_integer, %{}, "2"}
+             ]
+
+      assert lex("1 > 2") == [
+               {:number_integer, %{}, "1"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "2"}
+             ]
     end
   end
 end
