@@ -142,6 +142,78 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "triple quoted strings" do
+    test "triple quotes" do
+      assert lex(~s/"""\nabc\n"""/) == [{:string, %{}, ~s/"""\nabc\n"""/}]
+      assert lex(~s/"""\na""bc\n"""/) == [{:string, %{}, ~s/"""\na""bc\n"""/}]
+
+      assert lex(~s/"""\na\\"""bc\n"""/) == [
+               {:string, %{}, ~s/"""\na/},
+               {:string_escape, %{}, ~s/\\"/},
+               {:string, %{}, ~s/""bc\n"""/}
+             ]
+    end
+  end
+
+  @sigil_delimiters [
+    {~s["""\n], ~s[\n"""]},
+    {"'''\n", "\n'''"},
+    {"\"", "\""},
+    {"'", "'"},
+    {"/", "/"},
+    {"{", "}"},
+    {"[", "]"},
+    {"(", ")"},
+    {"<", ">"},
+    {"|", "|"},
+    {"#", "#"},
+    {"`", "`"}
+  ]
+
+  describe "sigils" do
+    test "sigils with escape" do
+      for b <- ["b", "s", ""] do
+        for {llim, rlim} <- @sigil_delimiters do
+          assert lex(~s/~#{b}#{llim}abc#{rlim}/) == [{:string, %{}, ~s/~#{b}#{llim}abc#{rlim}/}]
+
+          assert lex(~s/~#{b}#{llim}~p#{rlim}/) == [
+                   {:string, %{}, ~s/~#{b}#{llim}/},
+                   {:string_interpol, %{}, "~p"},
+                   {:string, %{}, ~s/#{rlim}/}
+                 ]
+
+          if String.length(llim) == 1 do
+            assert lex(~s/~#{b}#{llim}a\\#{rlim}bc#{rlim}/) ==
+                     [
+                       {:string, %{}, ~s/~#{b}#{llim}a/},
+                       {:string_escape, %{}, ~s/\\#{rlim}/},
+                       {:string, %{}, ~s/bc#{rlim}/}
+                     ]
+          end
+        end
+      end
+    end
+
+    test "sigils without escape" do
+      for b <- ["B", "S"] do
+        for {llim, rlim} <- @sigil_delimiters do
+          assert lex(~s/~#{b}#{llim}abc#{rlim}/) == [{:string, %{}, ~s/~#{b}#{llim}abc#{rlim}/}]
+
+          assert lex(~s/~#{b}#{llim}~p#{rlim}/) == [
+                   {:string, %{}, ~s/~#{b}#{llim}/},
+                   {:string_interpol, %{}, "~p"},
+                   {:string, %{}, ~s/#{rlim}/}
+                 ]
+
+          if String.length(llim) == 1 do
+            match = {:string, %{}, ~s/~#{b}#{llim}a\\#{rlim}/}
+            assert [^match | _] = lex(~s/~#{b}#{llim}a\\#{rlim}bc#{rlim}/)
+          end
+        end
+      end
+    end
+  end
+
   describe "atoms" do
     test "are tokenized as such" do
       assert lex("atom") == [{:string_symbol, %{}, "atom"}]

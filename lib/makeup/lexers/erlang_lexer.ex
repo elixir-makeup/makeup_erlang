@@ -8,6 +8,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   import NimbleParsec
   import Makeup.Lexer.Combinators
   import Makeup.Lexer.Groups
+  import Makeup.Lexers.ErlangLexer.Helper
 
   ###################################################################
   # Step #1: tokenize the input (into a list of tokens)
@@ -169,6 +170,46 @@ defmodule Makeup.Lexers.ErlangLexer do
   escape_double_quote = string(~s/\\"/)
   erlang_string = string_like(~s/"/, ~s/"/, [escape_double_quote, string_interpol], :string)
 
+  escaped_char =
+    string("\\")
+    |> utf8_string([], 1)
+    |> token(:string_escape)
+
+  triple_quoted_string =
+    lookahead_string(string(~s/"""\n/), string(~s/\n"""/), [escaped_char, string_interpol])
+
+  sigil_delimiters = [
+    {~s["""\n], ~s[\n"""]},
+    {"'''\n", "\n'''"},
+    {"\"", "\""},
+    {"'", "'"},
+    {"/", "/"},
+    {"{", "}"},
+    {"[", "]"},
+    {"(", ")"},
+    {"<", ">"},
+    {"|", "|"},
+    {"`", "`"},
+    {"#", "#"}
+  ]
+
+  default_sigil_interpol =
+    for {ldelim, rdelim} <- sigil_delimiters do
+      sigil(ldelim, rdelim, nil, [escaped_char, string_interpol])
+    end
+
+  sigils_interpol =
+    for {ldelim, rdelim} <- sigil_delimiters do
+      sigil(ldelim, rdelim, [?b, ?s], [escaped_char, string_interpol])
+    end
+
+  sigils_no_interpol =
+    for {ldelim, rdelim} <- sigil_delimiters do
+      sigil(ldelim, rdelim, [?B, ?S], [string_interpol])
+    end
+
+  all_sigils = default_sigil_interpol ++ sigils_interpol ++ sigils_no_interpol
+
   # Combinators that highlight expressions surrounded by a pair of delimiters.
   punctuation =
     word_from_list(
@@ -222,36 +263,42 @@ defmodule Makeup.Lexers.ErlangLexer do
   end
 
   root_element_combinator =
-    choice([
-      erl_prompt,
-      module_attribute,
-      hashbang,
-      whitespace,
-      comment,
-      erlang_string,
-      record,
-      punctuation,
-      # `tuple` might be unnecessary
-      tuple,
-      syntax_operators,
-      # Numbers
-      number_integer_in_weird_base,
-      number_float,
-      number_integer,
-      # Variables
-      variable,
-      namespace,
-      function_arity,
-      function,
-      atom,
-      macro,
-      character,
-      label,
-      # If we can't parse any of the above, we highlight the next character as an error
-      # and proceed from there.
-      # A lexer should always consume any string given as input.
-      any_char
-    ])
+    choice(
+      [
+        erl_prompt,
+        module_attribute,
+        hashbang,
+        whitespace,
+        comment,
+        triple_quoted_string,
+        erlang_string
+      ] ++
+        all_sigils ++
+        [
+          record,
+          punctuation,
+          # `tuple` might be unnecessary
+          tuple,
+          syntax_operators,
+          # Numbers
+          number_integer_in_weird_base,
+          number_float,
+          number_integer,
+          # Variables
+          variable,
+          namespace,
+          function_arity,
+          function,
+          atom,
+          macro,
+          character,
+          label,
+          # If we can't parse any of the above, we highlight the next character as an error
+          # and proceed from there.
+          # A lexer should always consume any string given as input.
+          any_char
+        ]
+    )
 
   ##############################################################################
   # Semi-public API: these two functions can be used by someone who wants to
