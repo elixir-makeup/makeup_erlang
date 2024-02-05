@@ -322,7 +322,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   # Step #2: postprocess the list of tokens
   ###################################################################
 
-  @keywords ~W[after begin case catch cond end fun if let of query receive try when]
+  @keywords ~W[after begin case catch cond end fun if let of query receive try when maybe else]
 
   @builtins ~W[
     abs append_element apply atom_to_list binary_to_list bitstring_to_list

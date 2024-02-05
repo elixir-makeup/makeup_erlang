@@ -261,6 +261,8 @@ defmodule ErlangLexerTokenizer do
       assert lex("query") == [{:keyword, %{}, "query"}]
       assert lex("receive") == [{:keyword, %{}, "receive"}]
       assert lex("when") == [{:keyword, %{}, "when"}]
+      assert lex("maybe") == [{:keyword, %{}, "maybe"}]
+      assert lex("else") == [{:keyword, %{}, "else"}]
     end
 
     test "atoms are not tokenized as keyword" do
