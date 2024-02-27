@@ -506,4 +506,56 @@ defmodule ErlangLexerTokenizer do
              ]
     end
   end
+
+  describe "shell error" do
+    test "single asterix" do
+      assert lex("1> P.\n* 1:1: variable 'P' is unbound") == [
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:name, %{}, "P"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:generic_traceback, %{}, "* 1:1: variable 'P' is unbound"}
+             ]
+    end
+
+    test "double asterix aka multiline error" do
+      assert lex(
+               "1> P = Descriptor.\n** exception error: no match of right hand side value {4,abcd}"
+             ) == [
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:name, %{}, "P"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "Descriptor"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:generic_traceback, %{},
+                "** exception error: no match of right hand side value {4,abcd}"}
+             ]
+
+      assert lex(~S"""
+             1> list_to_binary(<<>>).
+             ** exception error: bad argument
+                  in function  list_to_binary/1
+                     called as list_to_binary(<<>>)
+                     *** argument 1: not an iolist term
+             """) == [
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:name_function, %{}, "list_to_binary"},
+               {:punctuation, %{group_id: "group-1"}, "("},
+               {:punctuation, %{}, "<<"},
+               {:punctuation, %{}, ">>"},
+               {:punctuation, %{group_id: "group-1"}, ")"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {
+                 :generic_traceback,
+                 %{},
+                 "** exception error: bad argument\n     in function  list_to_binary/1\n        called as list_to_binary(<<>>)\n        *** argument 1: not an iolist term"
+               },
+               {:whitespace, %{}, "\n"}
+             ]
+    end
+  end
 end
