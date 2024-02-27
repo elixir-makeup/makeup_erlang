@@ -1,7 +1,7 @@
 defmodule MakeupErlang.Mixfile do
   use Mix.Project
 
-  @version "0.1.4"
+  @version "0.1.5"
   @url "https://github.com/elixir-makeup/makeup_erlang"
 
   def project do
@@ -33,7 +33,6 @@ defmodule MakeupErlang.Mixfile do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       mod: {Makeup.Lexers.ErlangLexer.Application, []},
@@ -41,7 +40,6 @@ defmodule MakeupErlang.Mixfile do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:makeup, "~> 1.0"}
@@ -53,7 +51,7 @@ defmodule MakeupErlang.Mixfile do
     ex_doc = Path.join(Mix.path_for(:escripts), "ex_doc")
 
     unless File.exists?(ex_doc) do
-      raise "cannot build docs because escript for ex_doc is not installed"
+      raise "cannot build docs because escript for ex_doc is not installed, run \"mix escript.install hex ex_doc\""
     end
 
     args = ["MakeupErlang", @version, Mix.Project.compile_path()]
