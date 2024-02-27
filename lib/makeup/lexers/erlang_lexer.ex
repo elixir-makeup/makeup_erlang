@@ -255,6 +255,27 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> string("> ")
     |> token(:generic_prompt, %{selectable: false})
 
+  # Error in shell
+  erl_shell_error =
+    token("\n", :whitespace)
+    |> concat(
+      string("* ")
+      |> utf8_string([not: ?\n], min: 1)
+      |> token(:generic_traceback)
+    )
+
+  erl_shell_multiline_error =
+    token("\n", :whitespace)
+    |> concat(
+      string("** ")
+      |> utf8_string([not: ?\n], min: 1)
+      |> repeat(
+        string("\n    ")
+        |> utf8_string([not: ?\n], min: 1)
+      )
+      |> token(:generic_traceback)
+    )
+
   # Tag the tokens with the language name.
   # This makes it easier to postprocess files with multiple languages.
   @doc false
@@ -266,6 +287,8 @@ defmodule Makeup.Lexers.ErlangLexer do
     choice(
       [
         erl_prompt,
+        erl_shell_error,
+        erl_shell_multiline_error,
         module_attribute,
         hashbang,
         whitespace,
