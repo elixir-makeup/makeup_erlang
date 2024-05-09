@@ -6,6 +6,12 @@ defmodule ErlangLexerTokenizer do
     assert lex("") == []
   end
 
+  test "character" do
+    assert lex("$a") == [{:string_char, %{}, "$a"}]
+    assert lex("$\\ ") == [{:string_char, %{}, "$\\ "}]
+    assert lex("$🫂") == [{:string_char, %{}, "$🫂"}]
+  end
+
   test "comment" do
     assert lex("%abc") == [{:comment_single, %{}, "%abc"}]
     assert lex("% abc") == [{:comment_single, %{}, "% abc"}]
