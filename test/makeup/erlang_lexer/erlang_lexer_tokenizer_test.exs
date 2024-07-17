@@ -6,6 +6,14 @@ defmodule ErlangLexerTokenizer do
     assert lex("") == []
   end
 
+  test "whitespace" do
+    assert lex(" ") == [{:whitespace, %{}, " "}]
+    assert lex("\n") == [{:whitespace, %{}, "\n"}]
+    assert lex("\t") == [{:whitespace, %{}, "\t"}]
+    assert lex("\f") == [{:whitespace, %{}, "\f"}]
+    assert lex("\s") == [{:whitespace, %{}, "\s"}]
+  end
+
   test "character" do
     assert lex("$a") == [{:string_char, %{}, "$a"}]
     assert lex("$\\ ") == [{:string_char, %{}, "$\\ "}]
