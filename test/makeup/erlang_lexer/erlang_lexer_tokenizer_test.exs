@@ -231,6 +231,57 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "comprehensions" do
+    test "list" do
+      assert lex("[A||A<-B]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<-"},
+               {:name, %{}, "B"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+
+      assert lex("[A||A<-B,true]") ==
+               [
+                 {:punctuation, %{group_id: "group-1"}, "["},
+                 {:name, %{}, "A"},
+                 {:punctuation, %{}, "||"},
+                 {:name, %{}, "A"},
+                 {:operator, %{}, "<-"},
+                 {:name, %{}, "B"},
+                 {:punctuation, %{}, ","},
+                 {:string_symbol, %{}, "true"},
+                 {:punctuation, %{group_id: "group-1"}, "]"}
+               ]
+    end
+
+    test "binary" do
+      assert lex("[A||A<=B]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<="},
+               {:name, %{}, "B"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+
+      assert lex("<<A||A<=B,true>>") == [
+               {:punctuation, %{group_id: "group-1"}, "<<"},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<="},
+               {:name, %{}, "B"},
+               {:punctuation, %{}, ","},
+               {:string_symbol, %{}, "true"},
+               {:punctuation, %{group_id: "group-1"}, ">>"}
+             ]
+    end
+  end
+
   describe "atoms" do
     test "are tokenized as such" do
       assert lex("atom") == [{:string_symbol, %{}, "atom"}]
@@ -312,6 +363,7 @@ defmodule ErlangLexerTokenizer do
       assert lex("=") == [{:operator, %{}, "="}]
       assert lex("!") == [{:operator, %{}, "!"}]
       assert lex("<-") == [{:operator, %{}, "<-"}]
+      assert lex("<=") == [{:operator, %{}, "<="}]
     end
 
     test "word operators are tokenized as operator" do
