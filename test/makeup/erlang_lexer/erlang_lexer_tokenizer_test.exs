@@ -136,22 +136,25 @@ defmodule ErlangLexerTokenizer do
 
   describe "binary" do
     test "<<>> syntax" do
-      assert lex(~s/<<>>/) == [{:punctuation, %{}, "<<"}, {:punctuation, %{}, ">>"}]
+      assert lex(~s/<<>>/) == [
+               {:punctuation, %{group_id: "group-1"}, "<<"},
+               {:punctuation, %{group_id: "group-1"}, ">>"}
+             ]
     end
 
     test "<<\"\">> syntax" do
       assert lex(~s/<<"">>/) == [
-               {:punctuation, %{}, "<<"},
+               {:punctuation, %{group_id: "group-1"}, "<<"},
                {:string, %{}, ~s/""/},
-               {:punctuation, %{}, ">>"}
+               {:punctuation, %{group_id: "group-1"}, ">>"}
              ]
     end
 
     test "<<\"string\">> syntax" do
       assert lex(~s/<<"string">>/) == [
-               {:punctuation, %{}, "<<"},
+               {:punctuation, %{group_id: "group-1"}, "<<"},
                {:string, %{}, ~s/"string"/},
-               {:punctuation, %{}, ">>"}
+               {:punctuation, %{group_id: "group-1"}, ">>"}
              ]
     end
   end
@@ -558,8 +561,8 @@ defmodule ErlangLexerTokenizer do
                {:generic_prompt, %{selectable: false}, "1> "},
                {:name_function, %{}, "list_to_binary"},
                {:punctuation, %{group_id: "group-1"}, "("},
-               {:punctuation, %{}, "<<"},
-               {:punctuation, %{}, ">>"},
+               {:punctuation, %{group_id: "group-2"}, "<<"},
+               {:punctuation, %{group_id: "group-2"}, ">>"},
                {:punctuation, %{group_id: "group-1"}, ")"},
                {:punctuation, %{}, "."},
                {:whitespace, %{}, "\n"},

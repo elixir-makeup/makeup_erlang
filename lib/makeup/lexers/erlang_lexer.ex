@@ -409,6 +409,14 @@ defmodule Makeup.Lexers.ErlangLexer do
         [{:punctuation, %{language: :erlang}, "]"}]
       ]
     ],
+    binary: [
+      open: [
+        [{:punctuation, %{language: :erlang}, "<<"}]
+      ],
+      close: [
+        [{:punctuation, %{language: :erlang}, ">>"}]
+      ]
+    ],
     tuple: [
       open: [
         [{:punctuation, %{language: :erlang}, "{"}]
