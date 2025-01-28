@@ -281,6 +281,28 @@ defmodule ErlangLexerTokenizer do
              ]
     end
 
+    test "strict" do
+      assert lex("[A||A<:-B]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<:-"},
+               {:name, %{}, "B"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+
+      assert lex("[A||A<:=B]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<:="},
+               {:name, %{}, "B"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+    end
+
     test "parallel" do
       assert lex("[A||A<-B&&C<-D]") == [
                {:punctuation, %{group_id: "group-1"}, "["},
@@ -379,7 +401,9 @@ defmodule ErlangLexerTokenizer do
       assert lex("=") == [{:operator, %{}, "="}]
       assert lex("!") == [{:operator, %{}, "!"}]
       assert lex("<-") == [{:operator, %{}, "<-"}]
+      assert lex("<:-") == [{:operator, %{}, "<:-"}]
       assert lex("<=") == [{:operator, %{}, "<="}]
+      assert lex("<:=") == [{:operator, %{}, "<:="}]
     end
 
     test "word operators are tokenized as operator" do
