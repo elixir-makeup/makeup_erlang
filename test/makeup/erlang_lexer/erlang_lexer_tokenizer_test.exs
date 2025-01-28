@@ -280,6 +280,22 @@ defmodule ErlangLexerTokenizer do
                {:punctuation, %{group_id: "group-1"}, ">>"}
              ]
     end
+
+    test "parallel" do
+      assert lex("[A||A<-B&&C<-D]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "A"},
+               {:punctuation, %{}, "||"},
+               {:name, %{}, "A"},
+               {:operator, %{}, "<-"},
+               {:name, %{}, "B"},
+               {:punctuation, %{}, "&&"},
+               {:name, %{}, "C"},
+               {:operator, %{}, "<-"},
+               {:name, %{}, "D"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+    end
   end
 
   describe "atoms" do
