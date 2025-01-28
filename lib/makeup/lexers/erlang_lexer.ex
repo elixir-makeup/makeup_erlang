@@ -219,7 +219,10 @@ defmodule Makeup.Lexers.ErlangLexer do
   tuple = many_surrounded_by(parsec(:root_element), "{", "}")
 
   syntax_operators =
-    word_from_list(~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- ! ? ?!], :operator)
+    word_from_list(
+      ~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- <= ! ? ?!],
+      :operator
+    )
 
   record =
     token(string("#"), :operator)
