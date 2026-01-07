@@ -614,6 +614,47 @@ defmodule ErlangLexerTokenizer do
                {:number_integer, %{}, "2"}
              ]
     end
+
+    test "with newlines" do
+      assert lex("x. 1> a.") == [
+               {:string_symbol, %{}, "x"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "1"},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, "."}
+             ]
+
+      assert lex("x\n1> y") == [
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, "\n"},
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "y"}
+             ]
+
+      assert lex("x \n1> y") == [
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, " \n"},
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "y"}
+             ]
+
+      assert lex("x\r\n1> y") == [
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, "\r\n"},
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "y"}
+             ]
+
+      assert lex("x \r\n1> y") == [
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, " \r\n"},
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "y"}
+             ]
+    end
   end
 
   describe "shell error" do

@@ -14,7 +14,7 @@ defmodule Makeup.Lexers.ErlangLexer do
   # Step #1: tokenize the input (into a list of tokens)
   ###################################################################
 
-  whitespace = ascii_string([?\s, ?\f, ?\n, ?\t], min: 1) |> token(:whitespace)
+  whitespace = ascii_string([?\s, ?\f, ?\r, ?\n, ?\t], min: 1) |> token(:whitespace)
 
   # This is the combinator that ensures that the lexer will never reject a file
   # because of invalid input syntax
@@ -251,11 +251,15 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   # Erlang prompt
   erl_prompt =
-    string("\n")
-    |> optional(string("(") |> concat(atom_name) |> string(")"))
-    |> optional(digits)
-    |> string("> ")
-    |> token(:generic_prompt, %{selectable: false})
+    ascii_string([?\s, ?\r, ?\t], min: 0)
+    |> string("\n")
+    |> token(:whitespace)
+    |> concat(
+      optional(string("(") |> concat(atom_name) |> string(")"))
+      |> optional(digits)
+      |> string("> ")
+      |> token(:generic_prompt, %{selectable: false})
+    )
 
   # Error in shell
   erl_shell_error =
