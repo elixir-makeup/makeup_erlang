@@ -911,6 +911,103 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "real-world module fragment (integration)" do
+    # Exercises module attribute, doc string, function head with guard,
+    # body with map, BIF call, and a record. If any rule's choice order
+    # gets perturbed, this is the test most likely to catch it.
+    test "small module with -doc, guard, map, and BIF call" do
+      src = """
+
+      -module(positives).
+      -export([keep/1]).
+
+      -doc \"\"\"
+      Keep map entries whose values are positive integers.
+      \"\"\".
+      keep(M) when is_map(M) ->
+          \#{K => V || K := V <- M, is_integer(V), V > 0}.
+      """
+
+      assert lex(src) == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "module"},
+               {:punctuation, %{group_id: "group-1"}, "("},
+               {:string_symbol, %{}, "positives"},
+               {:punctuation, %{group_id: "group-1"}, ")"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "export"},
+               {:punctuation, %{group_id: "group-2"}, "("},
+               {:punctuation, %{group_id: "group-3"}, "["},
+               {:string_symbol, %{}, "keep"},
+               {:punctuation, %{}, "/"},
+               {:number_integer, %{}, "1"},
+               {:punctuation, %{group_id: "group-3"}, "]"},
+               {:punctuation, %{group_id: "group-2"}, ")"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "doc"},
+               {:whitespace, %{}, " "},
+               {:string, %{},
+                "\"\"\"\nKeep map entries whose values are positive integers.\n\"\"\""},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:name_function, %{}, "keep"},
+               {:punctuation, %{group_id: "group-4"}, "("},
+               {:name, %{}, "M"},
+               {:punctuation, %{group_id: "group-4"}, ")"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "when"},
+               {:whitespace, %{}, " "},
+               {:name_builtin, %{}, "is_map"},
+               {:punctuation, %{group_id: "group-5"}, "("},
+               {:name, %{}, "M"},
+               {:punctuation, %{group_id: "group-5"}, ")"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"},
+               {:whitespace, %{}, "\n    "},
+               {:punctuation, %{group_id: "group-6"}, "\#{"},
+               {:name, %{}, "K"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "=>"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "V"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "||"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "K"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, ":="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "V"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "<-"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "M"},
+               {:punctuation, %{}, ","},
+               {:whitespace, %{}, " "},
+               {:name_builtin, %{}, "is_integer"},
+               {:punctuation, %{group_id: "group-7"}, "("},
+               {:name, %{}, "V"},
+               {:punctuation, %{group_id: "group-7"}, ")"},
+               {:punctuation, %{}, ","},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "V"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "0"},
+               {:punctuation, %{group_id: "group-6"}, "}"},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"}
+             ]
+    end
+  end
+
   describe "fun keyword vs function call" do
     test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
       assert [
