@@ -96,6 +96,16 @@ defmodule Makeup.Lexers.ErlangLexer do
     ascii_string([?A..?Z, ?_], 1)
     |> optional(ascii_string([?a..?z, ?_, ?0..?9, ?A..?Z], min: 1))
 
+  # An underscore followed by at least one identifier character (`_5`,
+  # `_X`, `_unused`). Bare `_` stays as a punctuation token (the wildcard
+  # pattern), but `_<id>` is a variable in Erlang grammar and should
+  # render as `:name`. Without this rule the `_` is matched first by
+  # the `punctuation` rule and the rest of the identifier falls through.
+  underscore_identifier =
+    string("_")
+    |> ascii_string([?a..?z, ?_, ?0..?9, ?A..?Z], min: 1)
+    |> token(:name)
+
   simple_atom_name =
     ascii_string([?a..?z], 1)
     |> optional(ascii_string([?a..?z, ?_, ?@, ?0..?9, ?A..?Z], min: 1))
@@ -375,6 +385,7 @@ defmodule Makeup.Lexers.ErlangLexer do
         [
           native_record_external,
           record,
+          underscore_identifier,
           punctuation,
           # `tuple` might be unnecessary
           tuple,
