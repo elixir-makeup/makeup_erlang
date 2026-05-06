@@ -414,29 +414,15 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   @keywords ~W[after begin case catch cond end fun if let of query receive try when maybe else]
 
-  @builtins ~W[
-    abs append_element apply atom_to_list binary_to_list bitstring_to_list
-    binary_to_term bit_size bump_reductions byte_size cancel_timer
-    check_process_code delete_module demonitor disconnect_node display
-    element erase exit float float_to_list fun_info fun_to_list
-    function_exported garbage_collect get get_keys group_leader hash
-    hd integer_to_list iolist_to_binary iolist_size is_atom is_binary
-    is_bitstring is_boolean is_builtin is_float is_function is_integer
-    is_list is_number is_pid is_port is_process_alive is_record is_reference
-    is_tuple length link list_to_atom list_to_binary list_to_bitstring
-    list_to_existing_atom list_to_float list_to_integer list_to_pid
-    list_to_tuple load_module localtime_to_universaltime make_tuple
-    md5 md5_final md5_update memory module_loaded monitor monitor_node
-    node nodes open_port phash phash2 pid_to_list port_close port_command
-    port_connect port_control port_call port_info port_to_list
-    process_display process_flag process_info purge_module put read_timer
-    ref_to_list register resume_processround send send_after send_nosuspend
-    set_cookie setelement size spawn spawn_link spawn_monitor spawn_opt
-    split_binary start_timer statistics suspend_process system_flag
-    system_info system_monitor system_profile term_to_binary tl trace
-    trace_delivered trace_info trace_pattern trunc tuple_size tuple_to_list
-    universaltime_to_localtime unlink unregister whereis
-  ]
+  # Auto-imported BIFs, sourced at compile time from `erl_internal:bif/2` —
+  # the same predicate the Erlang compiler uses to decide what's auto-imported.
+  # Refreshed every time `makeup_erlang` is rebuilt, so the list stays in sync
+  # with the OTP version we compile against and never bit-rots.
+  @builtins :erlang.module_info(:exports)
+            |> Enum.filter(fn {name, arity} -> :erl_internal.bif(name, arity) end)
+            |> Enum.map(fn {name, _arity} -> Atom.to_string(name) end)
+            |> Enum.uniq()
+            |> Enum.sort()
 
   @word_operators ~W[and andalso band bnot bor bsl bsr bxor div not or orelse rem xor]
 
@@ -459,6 +445,12 @@ defmodule Makeup.Lexers.ErlangLexer do
     do: [{:keyword, meta, value} | postprocess_helper(tokens)]
 
   defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @builtins,
+    do: [{:name_builtin, meta, value} | postprocess_helper(tokens)]
+
+  # Same recovery for builtins: when a BIF is called as `length(L)` it is
+  # first matched by the `function` rule and tagged `:name_function`. Closes
+  # makeup_erlang #13.
+  defp postprocess_helper([{:name_function, meta, value} | tokens]) when value in @builtins,
     do: [{:name_builtin, meta, value} | postprocess_helper(tokens)]
 
   defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @word_operators,
