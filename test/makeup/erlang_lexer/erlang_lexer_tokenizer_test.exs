@@ -772,6 +772,92 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  # https://www.erlang.org/doc/system/data_types.html#sigil
+  describe "sigil delimiters (OTP 27 spec coverage)" do
+    # Pair delimiters: () [] {} <>
+    test "pair delimiters" do
+      for {open, close} <- [{"(", ")"}, {"[", "]"}, {"{", "}"}, {"<", ">"}] do
+        src = "~b" <> open <> "hi" <> close
+
+        assert [{:string, %{}, ^src}] = lex(src),
+               "expected ~b#{open}hi#{close} to lex as a single :string"
+      end
+    end
+
+    # Symmetric delimiters: / | ' " ` #
+    test "symmetric delimiters" do
+      for delim <- ["/", "|", "'", "\"", "`", "#"] do
+        src = "~b" <> delim <> "hi" <> delim
+
+        assert [{:string, %{}, ^src}] = lex(src),
+               "expected ~b#{delim}hi#{delim} to lex as a single :string"
+      end
+    end
+
+    test "triple-quote and triple-single-quote" do
+      assert [{:string, %{}, "~b\"\"\"\nhi\n\"\"\""}] =
+               lex("~b\"\"\"\nhi\n\"\"\"")
+
+      assert [{:string, %{}, "~b'''\nhi\n'''"}] =
+               lex("~b'''\nhi\n'''")
+    end
+
+    test "all sigil prefix kinds (~ ~b ~B ~s ~S) work with the same delimiters" do
+      for prefix <- ["~", "~b", "~B", "~s", "~S"] do
+        src = prefix <> "/hi/"
+
+        assert [{:string, %{}, ^src}] = lex(src),
+               "expected #{prefix}/hi/ to lex as a single :string"
+      end
+    end
+  end
+
+  describe "multi-quoted strings (OTP 27+)" do
+    test "triple-quoted string lexes as a single :string" do
+      assert [{:string, %{}, "\"\"\"\nfoo\n\"\"\""}] = lex("\"\"\"\nfoo\n\"\"\"")
+    end
+
+    test "quadruple-quoted string lexes as a single :string" do
+      assert [{:string, %{}, "\"\"\"\"\nfoo\n\"\"\"\""}] =
+               lex("\"\"\"\"\nfoo\n\"\"\"\"")
+    end
+
+    test "quadruple-quoted string can contain triple quotes in its body" do
+      # The whole point of using a quadruple opener: lets the body include
+      # `"""` literally without ending the string.
+      assert [{:string, %{}, body}] =
+               lex("\"\"\"\"\nhello \"\"\" inside\n\"\"\"\"")
+
+      assert body =~ "\"\"\""
+    end
+
+    test "quintuple-quoted string can contain quadruple quotes in its body" do
+      assert [{:string, %{}, body}] =
+               lex("\"\"\"\"\"\nhi \"\"\"\" foo\n\"\"\"\"\"")
+
+      assert body =~ "\"\"\"\""
+    end
+
+    test "escape sub-tokens still emitted inside quadruple-quoted strings" do
+      assert [
+               {:string, %{}, "\"\"\"\"\nhi "},
+               {:string_escape, %{}, "\\xFF"},
+               {:string, %{}, " there\n\"\"\"\""}
+             ] = lex("\"\"\"\"\nhi \\xFF there\n\"\"\"\"")
+    end
+
+    test "sigil prefixes work with quadruple-quoted strings" do
+      assert [{:string, %{}, "~b\"\"\"\"\nfoo\n\"\"\"\""}] =
+               lex("~b\"\"\"\"\nfoo\n\"\"\"\"")
+
+      assert [{:string, %{}, "~B\"\"\"\"\nhello \"\"\" inside\n\"\"\"\""}] =
+               lex("~B\"\"\"\"\nhello \"\"\" inside\n\"\"\"\"")
+
+      assert [{:string, %{}, "~\"\"\"\"\nhi\n\"\"\"\""}] =
+               lex("~\"\"\"\"\nhi\n\"\"\"\"")
+    end
+  end
+
   describe "OTP-current module attribute coverage" do
     # The generic `module_attribute` rule accepts any `atom_name`, which
     # means new attributes ship without lexer changes. Lock the current
