@@ -224,10 +224,39 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   erlang_string = string_like(~s/"/, ~s/"/, [escaped_char, string_interpol], :string)
 
+  # Multi-quoted strings (OTP 27+). The opening run of `"""` (or more) on
+  # its own line opens the string; a matching run on its own line closes
+  # it. Use a quadruple/quintuple opener when the body needs to contain
+  # `"""` literally. Each variant is a separate rule because NimbleParsec
+  # doesn't support dynamic delimiter lengths; longer-quote variants must
+  # be tried first so the triple-quote rule doesn't claim them prematurely.
+  quintuple_quoted_string =
+    lookahead_string(
+      string(~s/"""""\n/),
+      string(~s/\n"""""/),
+      [escaped_char, string_interpol]
+    )
+
+  quadruple_quoted_string =
+    lookahead_string(
+      string(~s/""""\n/),
+      string(~s/\n""""/),
+      [escaped_char, string_interpol]
+    )
+
   triple_quoted_string =
     lookahead_string(string(~s/"""\n/), string(~s/\n"""/), [escaped_char, string_interpol])
 
+  # Longer-quote variants must come first so the longest matching delimiter
+  # wins for sigils like `~"""""..."""""` (quintuple) or `~""""..."""" `
+  # (quadruple) — these are needed when the sigil body has to contain
+  # `"""` or `""""` literally, mirroring the rule for plain multi-quoted
+  # strings above.
   sigil_delimiters = [
+    {~s["""""\n], ~s[\n"""""]},
+    {"'''''\n", "\n'''''"},
+    {~s[""""\n], ~s[\n""""]},
+    {"''''\n", "\n''''"},
     {~s["""\n], ~s[\n"""]},
     {"'''\n", "\n'''"},
     {"\"", "\""},
@@ -392,6 +421,8 @@ defmodule Makeup.Lexers.ErlangLexer do
         hashbang,
         whitespace,
         comment,
+        quintuple_quoted_string,
+        quadruple_quoted_string,
         triple_quoted_string,
         erlang_string
       ] ++
