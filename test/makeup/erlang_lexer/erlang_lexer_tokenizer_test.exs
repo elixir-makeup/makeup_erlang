@@ -665,6 +665,29 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "fun keyword vs function call" do
+    test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
+      assert [
+               {:keyword, %{}, "fun"},
+               {:punctuation, _, "("},
+               {:name, %{}, "X"},
+               {:punctuation, _, ")"} | _
+             ] = lex("fun(X) -> X end")
+    end
+
+    test "fun mod:func/2 still tokenizes correctly" do
+      assert [
+               {:keyword, %{}, "fun"},
+               {:whitespace, %{}, " "},
+               {:name_class, %{}, "mod"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "func"},
+               {:punctuation, %{}, "/"},
+               {:number_integer, %{}, "2"}
+             ] = lex("fun mod:func/2")
+    end
+  end
+
   describe "native records (OTP 29)" do
     test "tokenizes external native record construction" do
       assert [
