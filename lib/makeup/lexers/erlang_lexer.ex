@@ -224,9 +224,43 @@ defmodule Makeup.Lexers.ErlangLexer do
       :operator
     )
 
+  # OTP 29 native records relax the record-name rule: per the spec
+  # (https://www.erlang.org/doc/system/data_types.html), "it is not necessary
+  # to quote atoms that look like variable names or keywords." So `#State{}`,
+  # `#div{}`, `#case{}` are all valid record references even though `State`
+  # is variable-shape and `div`/`case` are reserved words. Tuple-based records
+  # don't allow these forms, but the lexer can't tell the two record kinds
+  # apart from local context — so accept the union.
+  #
+  # The `record_name: true` meta marker tells postprocess to skip the
+  # keyword / builtin / word-operator conversion for this position. Without
+  # it, `#case{}` would tokenise as `[#, keyword case, {]` — visually
+  # confusing because `case` here names a record, not an expression keyword.
+  record_name =
+    choice([
+      token(atom_name, :string_symbol, %{record_name: true}),
+      token(variable_name, :string_symbol, %{record_name: true})
+    ])
+
+  # External native record construction / pattern / field access:
+  #     #Module:Name{F = V}
+  #     #Module:Name.field
+  # The `Module:Name` shape between `#` and `{` (or `.`) was added in OTP 29
+  # alongside native records. Local construction (`#Name{...}`) is identical
+  # in shape to a tuple-based record and is handled by the rule below.
+  native_record_external =
+    token(string("#"), :operator)
+    |> concat(token(atom_name, :name_class))
+    |> concat(token(":", :punctuation))
+    |> concat(record_name)
+    |> choice([
+      token("{", :punctuation),
+      token(".", :punctuation)
+    ])
+
   record =
     token(string("#"), :operator)
-    |> concat(atom)
+    |> concat(record_name)
     |> choice([
       token("{", :punctuation),
       token(".", :punctuation)
@@ -304,6 +338,7 @@ defmodule Makeup.Lexers.ErlangLexer do
       ] ++
         all_sigils ++
         [
+          native_record_external,
           record,
           punctuation,
           # `tuple` might be unnecessary
@@ -378,6 +413,13 @@ defmodule Makeup.Lexers.ErlangLexer do
   ]
 
   @word_operators ~W[and andalso band bnot bor bsl bsr bxor div not or orelse rem xor]
+
+  # Record names tagged by the `record_name` combinator should not be
+  # reclassified as keywords / builtins / word-operators even if their
+  # text happens to match. Strip the marker after acting on it so it
+  # doesn't leak into the rendered output.
+  defp postprocess_helper([{:string_symbol, %{record_name: true} = meta, value} | tokens]),
+    do: [{:string_symbol, Map.delete(meta, :record_name), value} | postprocess_helper(tokens)]
 
   defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @keywords,
     do: [{:keyword, meta, value} | postprocess_helper(tokens)]
