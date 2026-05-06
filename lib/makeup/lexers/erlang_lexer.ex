@@ -309,10 +309,19 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> concat(token("/", :punctuation))
     |> concat(number_integer)
 
-  # Erlang prompt
+  # Erlang prompt. Anchored to a line boundary by requiring the leading
+  # whitespace to contain at least one `\n`. The original rule required
+  # the `\n` immediately before the prompt body, which broke when the
+  # generic `whitespace` rule had already consumed the trailing `\n` of
+  # a multi-character whitespace block (see makeup_elixir #28). Allowing
+  # any leading non-newline whitespace before the `\n` and any further
+  # whitespace after lets the rule match in those cases without
+  # false-positiving on `1 > 2` or `x. 1> a.` (neither contains a `\n`
+  # in the relevant position).
   erl_prompt =
-    ascii_string([?\s, ?\r, ?\t], min: 0)
+    ascii_string([?\s, ?\f, ?\r, ?\t], min: 0)
     |> string("\n")
+    |> optional(ascii_string([?\s, ?\f, ?\r, ?\n, ?\t], min: 1))
     |> token(:whitespace)
     |> concat(
       optional(string("(") |> concat(atom_name) |> string(")"))

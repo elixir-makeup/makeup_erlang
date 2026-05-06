@@ -1059,6 +1059,19 @@ defmodule ErlangLexerTokenizer do
              ]
     end
 
+    # makeup_elixir #28 analogue. The whitespace rule used to consume
+    # multi-line whitespace blocks greedily, leaving no `\n` for the prompt
+    # rule to anchor against. The prompt rule now matches any leading
+    # whitespace block that contains a `\n`.
+    test "is detected after a multi-line whitespace block" do
+      assert [
+               {:whitespace, %{}, "\n  \n"},
+               {:generic_prompt, %{selectable: false}, "1> "},
+               {:string_symbol, %{}, "ok"},
+               {:punctuation, %{}, "."}
+             ] = lex("\n  \n1> ok.")
+    end
+
     test "with newlines" do
       assert lex("x. 1> a.") == [
                {:string_symbol, %{}, "x"},
