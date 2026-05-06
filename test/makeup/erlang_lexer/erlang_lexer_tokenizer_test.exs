@@ -748,6 +748,40 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "OTP-current module attribute coverage" do
+    # The generic `module_attribute` rule accepts any `atom_name`, which
+    # means new attributes ship without lexer changes. Lock the current
+    # OTP-supported set with an explicit assertion list so the rule
+    # keeps covering them.
+    @known_attributes ~w[module export import behaviour behavior callback
+                         optional_callbacks on_load nifs deprecated removed
+                         feature compile export_type record export_record
+                         import_record spec type opaque doc moduledoc define
+                         ifdef ifndef else endif if elif vsn]
+
+    test "every current OTP module attribute lexes as :name_attribute" do
+      for attr <- @known_attributes do
+        # Use `(Body)` so the body is one well-known token. The point of
+        # the test is the attribute name, not the body shape.
+        expected = [
+          {:whitespace, %{}, "\n"},
+          {:punctuation, %{}, "-"},
+          {:name_attribute, %{}, attr},
+          {:punctuation, %{group_id: "group-1"}, "("},
+          {:name, %{}, "Body"},
+          {:punctuation, %{group_id: "group-1"}, ")"}
+        ]
+
+        actual = lex("\n-" <> attr <> "(Body)")
+
+        assert actual == expected,
+               "expected -#{attr} to lex as :name_attribute\n" <>
+                 "expected: #{inspect(expected)}\n" <>
+                 "actual:   #{inspect(actual)}"
+      end
+    end
+  end
+
   describe "native records (OTP 29)" do
     test "tokenizes external native record construction" do
       assert [
