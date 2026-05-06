@@ -450,6 +450,14 @@ defmodule Makeup.Lexers.ErlangLexer do
   defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @keywords,
     do: [{:keyword, meta, value} | postprocess_helper(tokens)]
 
+  # Keywords followed by `(` are first matched by the `function` rule and
+  # tagged `:name_function`. Recover them here. The most common case is
+  # `fun(X) -> ... end`; the rule also covers any other keyword that gets
+  # written next to `(` (e.g. `if(X)` in a teaching example of invalid
+  # syntax).
+  defp postprocess_helper([{:name_function, meta, value} | tokens]) when value in @keywords,
+    do: [{:keyword, meta, value} | postprocess_helper(tokens)]
+
   defp postprocess_helper([{:string_symbol, meta, value} | tokens]) when value in @builtins,
     do: [{:name_builtin, meta, value} | postprocess_helper(tokens)]
 
