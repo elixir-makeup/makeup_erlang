@@ -94,6 +94,33 @@ defmodule ErlangLexerTokenizer do
       assert lex("1.05e12") == [{:number_float, %{}, "1.05e12"}]
       assert lex("1.05e-6") == [{:number_float, %{}, "1.05e-6"}]
       assert lex("1.05e-12") == [{:number_float, %{}, "1.05e-12"}]
+      assert lex("1.05e+6") == [{:number_float, %{}, "1.05e+6"}]
+      assert lex("1.0e+10") == [{:number_float, %{}, "1.0e+10"}]
+    end
+
+    # Numeric separators (`_`) are valid inside numeric literals since OTP 27.
+    test "integers with underscore separators" do
+      assert lex("1_000") == [{:number_integer, %{}, "1_000"}]
+      assert lex("1_000_000") == [{:number_integer, %{}, "1_000_000"}]
+    end
+
+    test "floats with underscore separators" do
+      assert lex("1_000.5") == [{:number_float, %{}, "1_000.5"}]
+      assert lex("3.14_15") == [{:number_float, %{}, "3.14_15"}]
+    end
+
+    test "weird-base integers with underscore separators" do
+      assert lex("16#FF_FF") == [{:number_integer, %{}, "16#FF_FF"}]
+      assert lex("2#1010_1010") == [{:number_integer, %{}, "2#1010_1010"}]
+    end
+
+    test "trailing identifier after a number is not absorbed via underscore" do
+      # `1_000` is a number; the bare identifier following with whitespace is separate.
+      assert [
+               {:number_integer, %{}, "1_000"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"}
+             ] = lex("1_000 X")
     end
   end
 

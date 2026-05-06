@@ -59,24 +59,29 @@ defmodule Makeup.Lexers.ErlangLexer do
     ])
 
   # Numbers
-  digits = ascii_string([?0..?9], min: 1)
+  #
+  # Erlang/OTP 27 added underscore separators in numeric literals
+  # (`1_000_000`, `16#FF_FF`, `0.1_5e1_0`). Lexer-tolerant: underscores are
+  # accepted anywhere inside the digit run; we don't validate position.
+  digits = ascii_string([?0..?9, ?_], min: 1)
 
   number_integer =
     optional(ascii_char([?+, ?-]))
-    |> concat(digits)
+    |> ascii_char([?0..?9])
+    |> optional(ascii_string([?0..?9, ?_], min: 1))
     |> token(:number_integer)
 
   number_integer_in_weird_base =
     optional(ascii_char([?+, ?-]))
     |> concat(numeric_base)
     |> string("#")
-    |> ascii_string([?0..?9, ?a..?z, ?A..?Z], min: 1)
+    |> ascii_string([?0..?9, ?a..?z, ?A..?Z, ?_], min: 1)
     |> token(:number_integer)
 
   # Floating point numbers
   float_scientific_notation_part =
     ascii_string([?e, ?E], 1)
-    |> optional(string("-"))
+    |> optional(ascii_char([?+, ?-]))
     |> concat(digits)
 
   number_float =
