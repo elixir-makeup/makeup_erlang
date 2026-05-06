@@ -80,6 +80,36 @@ defmodule ErlangLexerTokenizer do
     assert lex("A_b1") == [{:name, %{}, "A_b1"}]
   end
 
+  describe "underscore-prefixed variables" do
+    test "underscore + digit lexes as a single variable" do
+      assert lex("_5") == [{:name, %{}, "_5"}]
+    end
+
+    test "underscore + lowercase lexes as a single variable" do
+      assert lex("_unused") == [{:name, %{}, "_unused"}]
+    end
+
+    test "underscore + uppercase lexes as a single variable" do
+      assert lex("_X") == [{:name, %{}, "_X"}]
+    end
+
+    test "bare underscore (wildcard) stays as punctuation" do
+      # Pattern wildcard. Treat as punctuation so themes can render it
+      # distinctly from a variable name.
+      assert [
+               {:keyword, %{}, "case"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "of"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "_"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"} | _
+             ] = lex("case X of _ -> ok end")
+    end
+  end
+
   test "function call" do
     assert lex("f(") == [
              {:name_function, %{}, "f"},
