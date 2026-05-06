@@ -553,6 +553,285 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "native records (OTP 29)" do
+    test "tokenizes external native record construction" do
+      assert [
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "vector_lib"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "vector"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#vector_lib:vector{x = 1.0, y = 2.0}")
+    end
+
+    test "tokenizes external native record print form" do
+      assert [
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "example"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "pair"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#example:pair{a = 1, b = 2}")
+    end
+
+    test "tokenizes external native record field access" do
+      assert [
+               {_, %{}, "X"},
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "vector_lib"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "vector"},
+               {:punctuation, %{}, "."} | _
+             ] = lex("X#vector_lib:vector.x")
+    end
+
+    test "tokenizes local native record construction the same as tuple-based records" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "pair"},
+               {:punctuation, %{}, "{"} | _
+             ] = lex("#pair{a = 1, b = 2}")
+    end
+
+    test "tokenizes -record #Name{...} native definition attribute" do
+      tokens = lex("\n-record #pair{a, b}.")
+      assert {:name_attribute, %{}, "record"} in tokens
+      assert {:operator, %{}, "#"} in tokens
+      assert {:string_symbol, %{}, "pair"} in tokens
+    end
+
+    test "tokenizes -export_record attribute" do
+      assert [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "export_record"} | _
+             ] = lex("\n-export_record([vector, position]).")
+    end
+
+    test "tokenizes -import_record attribute" do
+      assert [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "import_record"} | _
+             ] = lex("\n-import_record(vector_lib, [vector, position]).")
+    end
+
+    test "does not break the existing local-record rule when there is no `:`" do
+      tokens = lex("X#name{f = 1}")
+      assert {:operator, %{}, "#"} in tokens
+      assert {:string_symbol, %{}, "name"} in tokens
+      refute Enum.any?(tokens, fn t -> match?({:name_class, _, _}, t) end)
+    end
+
+    test "external native record pattern match" do
+      assert [
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "mod"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "name"},
+               {:punctuation, _, "{"},
+               {:string_symbol, %{}, "f"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:punctuation, _, "}"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "Y"}
+             ] = lex("#mod:name{f = X} = Y")
+    end
+
+    test "external native record update via prefixed variable" do
+      assert [
+               {:name, %{}, "Y"},
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "mod"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "name"},
+               {:punctuation, _, "{"} | _
+             ] = lex("Y#mod:name{f = 2}")
+    end
+
+    # Native records relax the record-name rule:
+    # https://www.erlang.org/doc/system/data_types.html says "it is not
+    # necessary to quote atoms that look like variable names or keywords."
+    # So `#State{}`, `#div{}`, `#case{}` are all valid.
+    test "variable-shape name (`#State{}`)" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "State"},
+               {:punctuation, _, "{"},
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "1"},
+               {:punctuation, _, "}"}
+             ] = lex("#State{x = 1}")
+    end
+
+    test "external native record with variable-shape name" do
+      assert [
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "mod"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "State"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#mod:State{x = 1}")
+    end
+
+    # Keyword and word-operator names stay as `:string_symbol` in record
+    # position. Postprocess sees the `record_name: true` meta marker and
+    # skips the usual conversion to `:keyword` / `:operator_word`, so the
+    # surrounding `#...{` shape renders consistently regardless of whether
+    # the name happens to be a reserved word.
+    test "keyword name (`#case{}`) stays as :string_symbol" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "case"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#case{x = 1}")
+    end
+
+    test "keyword name (`#fun{}`)" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "fun"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#fun{f = g}")
+    end
+
+    test "word-operator name (`#div{}`)" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "div"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#div{class}")
+    end
+
+    test "external native record with keyword name (`#mod:case{}`)" do
+      assert [
+               {:operator, %{}, "#"},
+               {:name_class, %{}, "mod"},
+               {:punctuation, %{}, ":"},
+               {:string_symbol, %{}, "case"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#mod:case{x = 1}")
+    end
+
+    test "quoted-atom record name (`#'42'{}`)" do
+      assert [
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "'42'"},
+               {:punctuation, _, "{"} | _
+             ] = lex("#'42'{}")
+    end
+
+    # Declaration syntax: `-record #Name{...}.` (no parens around the name).
+    # This is the OTP 29 native-record definition form, distinct from the
+    # tuple-based `-record(name, {...}).` form. The same name flexibility
+    # (lowercase / variable-shape / keyword / quoted) applies.
+    test "definition with lowercase name" do
+      assert lex("\n-record #pair{a, b}.") == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "record"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "pair"},
+               {:punctuation, %{group_id: "group-1"}, "{"},
+               {:string_symbol, %{}, "a"},
+               {:punctuation, %{}, ","},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "b"},
+               {:punctuation, %{group_id: "group-1"}, "}"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "definition with variable-shape name (`-record #State{x}.`)" do
+      assert lex("\n-record #State{x}.") == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "record"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "State"},
+               {:punctuation, %{group_id: "group-1"}, "{"},
+               {:string_symbol, %{}, "x"},
+               {:punctuation, %{group_id: "group-1"}, "}"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "definition with keyword name (`-record #div{class}.`)" do
+      assert lex("\n-record #div{class}.") == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "record"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "div"},
+               {:punctuation, %{group_id: "group-1"}, "{"},
+               {:string_symbol, %{}, "class"},
+               {:punctuation, %{group_id: "group-1"}, "}"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "definition with quoted name (`-record #'42'{}.`)" do
+      assert lex("\n-record #'42'{}.") == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "record"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "'42'"},
+               {:punctuation, %{group_id: "group-1"}, "{"},
+               {:punctuation, %{group_id: "group-1"}, "}"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "the record_name meta marker does not leak into output tokens" do
+      # Postprocess strips the marker after acting on it. End-to-end the
+      # token's meta should be the same as for any other :string_symbol.
+      [_, {:string_symbol, meta_kw, "case"} | _] = lex("#case{x = 1}")
+      [_, {:string_symbol, meta_lc, "vector"} | _] = lex("#vector{x = 1}")
+      assert meta_kw == meta_lc
+      refute Map.has_key?(meta_kw, :record_name)
+    end
+
+    test "definition with default values" do
+      # `-record #vector{x = 0.0, y = 0.0}.` — the OTP 29 spec example.
+      assert lex("\n-record #vector{x = 0.0, y = 0.0}.") == [
+               {:whitespace, %{}, "\n"},
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "record"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "#"},
+               {:string_symbol, %{}, "vector"},
+               {:punctuation, %{group_id: "group-1"}, "{"},
+               {:string_symbol, %{}, "x"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:number_float, %{}, "0.0"},
+               {:punctuation, %{}, ","},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "y"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "="},
+               {:whitespace, %{}, " "},
+               {:number_float, %{}, "0.0"},
+               {:punctuation, %{group_id: "group-1"}, "}"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+  end
+
   describe "function_arity" do
     test "is tokenized correctly for the syntax function_name/arity" do
       assert [
