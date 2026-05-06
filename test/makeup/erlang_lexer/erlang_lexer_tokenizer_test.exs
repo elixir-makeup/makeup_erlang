@@ -665,6 +665,36 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "builtin (BIF) recognition" do
+    # The @builtins list is generated at compile time from `erl_internal:bif/2`.
+    test "atoms that are auto-imported BIFs render as :name_builtin" do
+      assert [{:name_builtin, %{}, "length"}] = lex("length")
+      assert [{:name_builtin, %{}, "tuple_size"}] = lex("tuple_size")
+    end
+
+    test "BIF calls (`name(...)`) render as :name_builtin not :name_function" do
+      # makeup_erlang #13. Before this fix, `length(L)` rendered as a regular
+      # function call instead of a builtin.
+      assert [{:name_builtin, %{}, "length"} | _] = lex("length(L)")
+      assert [{:name_builtin, %{}, "is_atom"} | _] = lex("is_atom(X)")
+      assert [{:name_builtin, %{}, "tuple_size"} | _] = lex("tuple_size(T)")
+    end
+
+    test "post-OTP-19 BIFs are recognised (proves the static list is gone)" do
+      assert [{:name_builtin, %{}, "map_get"} | _] = lex("map_get(K, M)")
+      assert [{:name_builtin, %{}, "is_map_key"} | _] = lex("is_map_key(K, M)")
+      assert [{:name_builtin, %{}, "binary_part"} | _] = lex("binary_part(B, 0, 4)")
+      assert [{:name_builtin, %{}, "floor"} | _] = lex("floor(X)")
+      assert [{:name_builtin, %{}, "ceil"} | _] = lex("ceil(X)")
+    end
+
+    test "module_info and nif_error are not classified as BIFs" do
+      # Both are exported from `erlang` but neither is auto-imported.
+      refute Enum.any?(lex("module_info"), &match?({:name_builtin, _, "module_info"}, &1))
+      refute Enum.any?(lex("nif_error"), &match?({:name_builtin, _, "nif_error"}, &1))
+    end
+  end
+
   describe "fun keyword vs function call" do
     test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
       assert [
@@ -1106,7 +1136,7 @@ defmodule ErlangLexerTokenizer do
                      *** argument 1: not an iolist term
              """) == [
                {:generic_prompt, %{selectable: false}, "1> "},
-               {:name_function, %{}, "list_to_binary"},
+               {:name_builtin, %{}, "list_to_binary"},
                {:punctuation, %{group_id: "group-1"}, "("},
                {:punctuation, %{group_id: "group-2"}, "<<"},
                {:punctuation, %{group_id: "group-2"}, ">>"},
