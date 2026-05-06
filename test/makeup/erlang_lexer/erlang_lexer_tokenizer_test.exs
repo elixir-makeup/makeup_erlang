@@ -20,6 +20,36 @@ defmodule ErlangLexerTokenizer do
     assert lex("$🫂") == [{:string_char, %{}, "$🫂"}]
   end
 
+  describe "character escape sequences" do
+    test "named escapes" do
+      assert lex("$\\n") == [{:string_char, %{}, "$\\n"}]
+      assert lex("$\\t") == [{:string_char, %{}, "$\\t"}]
+      assert lex("$\\\\") == [{:string_char, %{}, "$\\\\"}]
+      assert lex("$\\\"") == [{:string_char, %{}, "$\\\""}]
+    end
+
+    test "octal escape" do
+      assert lex("$\\7") == [{:string_char, %{}, "$\\7"}]
+      assert lex("$\\07") == [{:string_char, %{}, "$\\07"}]
+      assert lex("$\\077") == [{:string_char, %{}, "$\\077"}]
+    end
+
+    test "hex escape (two-digit form)" do
+      assert lex("$\\xFF") == [{:string_char, %{}, "$\\xFF"}]
+      assert lex("$\\x4a") == [{:string_char, %{}, "$\\x4a"}]
+    end
+
+    test "hex escape (braced form)" do
+      assert lex("$\\x{1F600}") == [{:string_char, %{}, "$\\x{1F600}"}]
+      assert lex("$\\x{0}") == [{:string_char, %{}, "$\\x{0}"}]
+    end
+
+    test "control escape" do
+      assert lex("$\\^A") == [{:string_char, %{}, "$\\^A"}]
+      assert lex("$\\^z") == [{:string_char, %{}, "$\\^z"}]
+    end
+  end
+
   test "comment" do
     assert lex("%abc") == [{:comment_single, %{}, "%abc"}]
     assert lex("% abc") == [{:comment_single, %{}, "% abc"}]
@@ -148,16 +178,53 @@ defmodule ErlangLexerTokenizer do
     end
 
     test "tokenizes escape of double quotes correctly" do
-      assert [{:string, %{}, ~s/"escape \\"double quote\\""/}] ==
-               lex(~s/"escape \\"double quote\\""/)
+      # Strings now produce :string_escape sub-tokens for each escape
+      # sequence (mirroring the triple-quoted-string behaviour and
+      # `makeup_elixir`). Themes can render escapes distinctly from the
+      # surrounding string body.
+      assert [
+               {:string, %{}, ~s/"escape /},
+               {:string_escape, %{}, ~s/\\"/},
+               {:string, %{}, "double quote"},
+               {:string_escape, %{}, ~s/\\"/},
+               {:string, %{}, "\""}
+             ] = lex(~s/"escape \\"double quote\\""/)
 
-      assert [{:string, %{}, ~s/"\\"quote\\""/}] == lex(~s/"\\"quote\\""/)
       assert {:string, %{}, ~s/"invalid string\\"/} not in lex(~s/"invalid string\\"/)
     end
 
     test "tokenizes literal escaped characters correctly" do
-      assert [{:string, %{}, ~s/"\\b"/}] == lex(~s/"\\b"/)
-      assert [{:string, %{}, ~s/"\\\\b"/}] == lex(~s/"\\\\b"/)
+      assert [
+               {:string, %{}, "\""},
+               {:string_escape, %{}, "\\b"},
+               {:string, %{}, "\""}
+             ] = lex(~s/"\\b"/)
+
+      assert [
+               {:string, %{}, "\""},
+               {:string_escape, %{}, "\\\\"},
+               {:string, %{}, "b\""}
+             ] = lex(~s/"\\\\b"/)
+    end
+
+    test "tokenizes hex / octal / control escapes inside strings" do
+      assert [
+               {:string, %{}, ~s/"a/},
+               {:string_escape, %{}, ~s/\\xFF/},
+               {:string, %{}, "b\""}
+             ] = lex(~s/"a\\xFFb"/)
+
+      assert [
+               {:string, %{}, ~s/"a/},
+               {:string_escape, %{}, "\\077"},
+               {:string, %{}, "b\""}
+             ] = lex(~s/"a\\077b"/)
+
+      assert [
+               {:string, %{}, ~s/"a/},
+               {:string_escape, %{}, "\\^A"},
+               {:string, %{}, "b\""}
+             ] = lex(~s/"a\\^Ab"/)
     end
   end
 
