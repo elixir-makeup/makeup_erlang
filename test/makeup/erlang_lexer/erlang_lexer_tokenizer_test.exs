@@ -749,6 +749,91 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "function clauses with guards" do
+    test "guard with operator and BIF" do
+      assert [
+               {:name_function, %{}, "f"},
+               {:punctuation, _, "("},
+               {:name, %{}, "X"},
+               {:punctuation, _, ")"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "when"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "0"},
+               {:punctuation, %{}, ","},
+               {:whitespace, %{}, " "},
+               {:name_builtin, %{}, "is_integer"},
+               {:punctuation, _, "("},
+               {:name, %{}, "X"},
+               {:punctuation, _, ")"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"} | _
+             ] = lex("f(X) when X > 0, is_integer(X) -> X * 2.")
+    end
+
+    test "guard sequence with `;` (alternative guards)" do
+      assert lex("f(X) when X < 0; X > 100 -> out_of_range.") == [
+               {:name_function, %{}, "f"},
+               {:punctuation, %{group_id: "group-1"}, "("},
+               {:name, %{}, "X"},
+               {:punctuation, %{group_id: "group-1"}, ")"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "when"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "<"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "0"},
+               {:punctuation, %{}, ";"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "100"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "out_of_range"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "guard with word operators (`andalso`, `orelse`)" do
+      assert lex("f(X) when is_atom(X) andalso X =/= undefined -> ok.") == [
+               {:name_function, %{}, "f"},
+               {:punctuation, %{group_id: "group-1"}, "("},
+               {:name, %{}, "X"},
+               {:punctuation, %{group_id: "group-1"}, ")"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "when"},
+               {:whitespace, %{}, " "},
+               {:name_builtin, %{}, "is_atom"},
+               {:punctuation, %{group_id: "group-2"}, "("},
+               {:name, %{}, "X"},
+               {:punctuation, %{group_id: "group-2"}, ")"},
+               {:whitespace, %{}, " "},
+               {:operator_word, %{}, "andalso"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "=/="},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "undefined"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "ok"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+  end
+
   describe "fun keyword vs function call" do
     test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
       assert [
