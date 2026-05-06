@@ -725,6 +725,30 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "macros" do
+    test "parameterless macro tokenizes as :name_constant" do
+      assert lex("?FOO") == [{:name_constant, %{}, "?FOO"}]
+      assert lex("?bar") == [{:name_constant, %{}, "?bar"}]
+    end
+
+    test "parameterised macro head tokenizes as :name_function" do
+      assert [
+               {:name_function, %{}, "?FOO"},
+               {:punctuation, _, "("},
+               {:name, %{}, "X"},
+               {:punctuation, _, ")"}
+             ] = lex("?FOO(X)")
+    end
+
+    test "parameterless macro followed by punctuation stays as constant" do
+      # `?FOO,` shouldn't be lured into the parameterised form.
+      assert [
+               {:name_constant, %{}, "?FOO"},
+               {:punctuation, %{}, ","} | _
+             ] = lex("?FOO, X")
+    end
+  end
+
   describe "fun keyword vs function call" do
     test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
       assert [
