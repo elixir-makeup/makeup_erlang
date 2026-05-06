@@ -858,6 +858,61 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "doc / moduledoc attributes (OTP 27+)" do
+    test "moduledoc with triple-quoted body" do
+      src = "-moduledoc \"\"\"\nThis module does X.\n\"\"\""
+
+      assert [
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "moduledoc"},
+               {:whitespace, %{}, " "},
+               {:string, %{}, "\"\"\"\nThis module does X.\n\"\"\""}
+             ] = lex(src)
+    end
+
+    test "doc attribute followed by a function definition" do
+      src = "-doc \"\"\"\nReturns true if X is positive.\n\"\"\".\nis_pos(X) when X > 0 -> true."
+
+      assert lex(src) == [
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "doc"},
+               {:whitespace, %{}, " "},
+               {:string, %{}, "\"\"\"\nReturns true if X is positive.\n\"\"\""},
+               {:punctuation, %{}, "."},
+               {:whitespace, %{}, "\n"},
+               {:name_function, %{}, "is_pos"},
+               {:punctuation, %{group_id: "group-1"}, "("},
+               {:name, %{}, "X"},
+               {:punctuation, %{group_id: "group-1"}, ")"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "when"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, ">"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "0"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "->"},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "true"},
+               {:punctuation, %{}, "."}
+             ]
+    end
+
+    test "doc with single-line string body still works" do
+      src = "-doc \"short\"."
+
+      assert [
+               {:punctuation, %{}, "-"},
+               {:name_attribute, %{}, "doc"},
+               {:whitespace, %{}, " "},
+               {:string, %{}, "\"short\""},
+               {:punctuation, %{}, "."}
+             ] = lex(src)
+    end
+  end
+
   describe "OTP-current module attribute coverage" do
     # The generic `module_attribute` rule accepts any `atom_name`, which
     # means new attributes ship without lexer changes. Lock the current
