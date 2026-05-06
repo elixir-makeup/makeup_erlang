@@ -157,10 +157,23 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> optional(string(".") |> concat(atom_name))
     |> token(:name_label)
 
+  # `$\xFF`, `$\x{1F600}`, `$\077`, `$\^A`, plus simple `$\n` / `$\t` / `$\\` /
+  # `$\"` / `$\'` etc. The structured escapes (octal, hex, ctrl) must be tried
+  # before the single-char fallback so multi-character sequences are consumed
+  # whole.
+  character_escape =
+    string("\\")
+    |> choice([
+      escape_hex,
+      escape_octal,
+      escape_ctrl,
+      utf8_char([])
+    ])
+
   character =
     string("$")
     |> choice([
-      string("\\") |> utf8_char([]),
+      character_escape,
       utf8_char(not: ?\\)
     ])
     |> token(:string_char)
@@ -171,13 +184,21 @@ defmodule Makeup.Lexers.ErlangLexer do
     |> ascii_char(to_charlist("~#+BPWXb-ginpswx"))
     |> token(:string_interpol)
 
-  escape_double_quote = string(~s/\\"/)
-  erlang_string = string_like(~s/"/, ~s/"/, [escape_double_quote, string_interpol], :string)
-
+  # Sub-token emitted inside string literals for escape sequences. Mirrors
+  # the `character_escape` shape so multi-character escapes (`\xFF`,
+  # `\x{1F600}`, `\077`, `\^A`) are consumed whole instead of getting
+  # cut at the first byte. Themes can render these distinctly.
   escaped_char =
     string("\\")
-    |> utf8_string([], 1)
+    |> choice([
+      escape_hex,
+      escape_octal,
+      escape_ctrl,
+      utf8_char([])
+    ])
     |> token(:string_escape)
+
+  erlang_string = string_like(~s/"/, ~s/"/, [escaped_char, string_interpol], :string)
 
   triple_quoted_string =
     lookahead_string(string(~s/"""\n/), string(~s/\n"""/), [escaped_char, string_interpol])
