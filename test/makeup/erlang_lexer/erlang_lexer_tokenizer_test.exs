@@ -431,6 +431,7 @@ defmodule ErlangLexerTokenizer do
       assert lex("<:-") == [{:operator, %{}, "<:-"}]
       assert lex("<=") == [{:operator, %{}, "<="}]
       assert lex("<:=") == [{:operator, %{}, "<:="}]
+      assert lex("?=") == [{:operator, %{}, "?="}]
     end
 
     test "word operators are tokenized as operator" do
@@ -577,6 +578,23 @@ defmodule ErlangLexerTokenizer do
       tokens = lex("#record(attribute = Value)")
       assert {:operator, %{}, "#"} not in tokens
       assert {:string_symbol, %{}, "record"} not in tokens
+    end
+  end
+
+  describe "maybe expression" do
+    # `?=` is the maybe-expression match operator added in OTP 25.
+    test "tokenizes ?= as a single operator inside a maybe block" do
+      assert lex("maybe X ?= ok end") == [
+               {:keyword, %{}, "maybe"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "?="},
+               {:whitespace, %{}, " "},
+               {:string_symbol, %{}, "ok"},
+               {:whitespace, %{}, " "},
+               {:keyword, %{}, "end"}
+             ]
     end
   end
 

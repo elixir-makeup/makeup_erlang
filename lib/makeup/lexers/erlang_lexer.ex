@@ -225,7 +225,7 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   syntax_operators =
     word_from_list(
-      ~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- <:- <= <:= ! ? ?!],
+      ~W[+ - +? ++ = == -- * / < > /= =:= =/= =< >= ==? <- <:- <= <:= ! ? ?! ?=],
       :operator
     )
 
