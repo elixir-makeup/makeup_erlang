@@ -834,6 +834,83 @@ defmodule ErlangLexerTokenizer do
     end
   end
 
+  describe "newer comprehensions (OTP 26 / 27)" do
+    test "list comprehension with strict generator (OTP 27)" do
+      assert lex("[X || X <:- L]") == [
+               {:punctuation, %{group_id: "group-1"}, "["},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "||"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "X"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "<:-"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "L"},
+               {:punctuation, %{group_id: "group-1"}, "]"}
+             ]
+    end
+
+    test "map comprehension (OTP 26)" do
+      # `#{K => V * 2 || K := V <- M}` exercises map-open `\#{`,
+      # map arrow `=>`, comprehension separator `||`, map match
+      # operator `:=`, and the list-generator operator `<-`.
+      assert lex("\#{K => V * 2 || K := V <- M}") == [
+               {:punctuation, %{group_id: "group-1"}, "\#{"},
+               {:name, %{}, "K"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "=>"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "V"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "*"},
+               {:whitespace, %{}, " "},
+               {:number_integer, %{}, "2"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "||"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "K"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, ":="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "V"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "<-"},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "M"},
+               {:punctuation, %{group_id: "group-1"}, "}"}
+             ]
+    end
+
+    test "bitstring comprehension with `<=` generator" do
+      # `<<>>` brackets, the bitstring-generator operator `<=`, and
+      # nested `<<>>` patterns inside.
+      assert lex("<< <<X:8>> || <<X:8>> <= Bin >>") == [
+               {:punctuation, %{group_id: "group-1"}, "<<"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{group_id: "group-2"}, "<<"},
+               {:name, %{}, "X"},
+               {:punctuation, %{}, ":"},
+               {:number_integer, %{}, "8"},
+               {:punctuation, %{group_id: "group-2"}, ">>"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{}, "||"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{group_id: "group-3"}, "<<"},
+               {:name, %{}, "X"},
+               {:punctuation, %{}, ":"},
+               {:number_integer, %{}, "8"},
+               {:punctuation, %{group_id: "group-3"}, ">>"},
+               {:whitespace, %{}, " "},
+               {:operator, %{}, "<="},
+               {:whitespace, %{}, " "},
+               {:name, %{}, "Bin"},
+               {:whitespace, %{}, " "},
+               {:punctuation, %{group_id: "group-1"}, ">>"}
+             ]
+    end
+  end
+
   describe "fun keyword vs function call" do
     test "fun(X) -> ... end tokenizes `fun` as keyword, not function name" do
       assert [
