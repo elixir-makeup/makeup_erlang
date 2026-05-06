@@ -156,6 +156,20 @@ defmodule Makeup.Lexers.ErlangLexer do
 
   macro_name = choice([variable_name, atom_name])
 
+  # Parameterised macro reference: `?FOO(arg1, arg2)`. Tokenised
+  # separately from the parameterless form so themes can render the two
+  # distinctly (matches `makeup_elixir`'s split between `@foo` and
+  # `@foo(...)`). The macro head emits as `:name_function`; the trailing
+  # `(` opens the standard punctuation group so paren matching still
+  # works.
+  macro_call =
+    string("?")
+    |> concat(macro_name)
+    |> token(:name_function)
+    |> concat(optional(whitespace))
+    |> concat(token("(", :punctuation))
+
+  # Parameterless macro: `?FOO`. Constants by convention.
   macro =
     string("?")
     |> concat(macro_name)
@@ -386,6 +400,11 @@ defmodule Makeup.Lexers.ErlangLexer do
           native_record_external,
           record,
           underscore_identifier,
+          # Macros must be tried before `syntax_operators`, since the
+          # operator list contains `?` and `?=` and would otherwise eat the
+          # leading `?` of `?FOO` / `?FOO(X)`.
+          macro_call,
+          macro,
           punctuation,
           # `tuple` might be unnecessary
           tuple,
@@ -400,7 +419,6 @@ defmodule Makeup.Lexers.ErlangLexer do
           function_arity,
           function,
           atom,
-          macro,
           character,
           label,
           # If we can't parse any of the above, we highlight the next character as an error
